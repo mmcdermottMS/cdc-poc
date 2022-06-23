@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "CDC.SbConsumer": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7021"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "httpPort": 34578,
+      "useSSL": false
+    }
+  }
+}

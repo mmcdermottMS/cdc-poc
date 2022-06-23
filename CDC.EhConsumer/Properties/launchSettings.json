@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "EhConsumer": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7124"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "httpPort": 30989,
+      "useSSL": false
+    }
+  }
+}
