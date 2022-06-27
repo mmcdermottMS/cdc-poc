@@ -52,7 +52,7 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' existing = {
           value: 'InstrumentationKey=${appInsights.properties.InstrumentationKey}'
         }
         {
-          name: 'AzureWebJobStorage__accountName'
+          name: 'AzureWebJobsStorage__accountName'
           value: storage.name
         }
         {
@@ -84,16 +84,8 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' existing = {
           value: '${serviceBus.name}.servicebus.windows.net'
         }
         {
-          name: 'ServiceBusHostName__fullyQualifiedNamespace'
+          name: 'ServiceBusConnection__fullyQualifiedNamespac'
           value: '${serviceBus.name}.servicebus.windows.net'
-        }
-        {
-          name: 'TopicName'
-          value: topicAName
-        }
-        {
-          name: 'SubscriberName'
-          value: subscriberAName
         }
         {
           name: 'EhNameSpace__fullyQualifiedNamespace'
@@ -101,6 +93,10 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' existing = {
         }
         {
           name: 'EhName'
+          value: 'addresses'
+        }
+        {
+          name: 'QueueName'
           value: 'addresses'
         }
       ]

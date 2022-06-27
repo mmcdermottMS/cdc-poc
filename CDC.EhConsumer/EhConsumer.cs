@@ -2,6 +2,7 @@ using Azure.Identity;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Consumer;
 using Azure.Messaging.ServiceBus;
+using Microsoft.ApplicationInsights;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System;
@@ -11,17 +12,27 @@ using System.Threading.Tasks;
 
 namespace CDC
 {
-    public static class EhConsumer
+    public class EhConsumer
     {
-        private static readonly ServiceBusClient _serviceBusClient = new ServiceBusClient(Environment.GetEnvironmentVariable("ServiceBusHostName"), new DefaultAzureCredential());
-        private static readonly ServiceBusSender _sender = _serviceBusClient.CreateSender(Environment.GetEnvironmentVariable("QueueName"));
+        private readonly ServiceBusClient _serviceBusClient;
+        private readonly ServiceBusSender _serviceBusSender;
+        private readonly TelemetryClient _telemetryClient;
+
+        public EhConsumer(TelemetryClient telemetryClient)
+        {
+            _serviceBusClient = new ServiceBusClient(Environment.GetEnvironmentVariable("ServiceBusHostName"), new DefaultAzureCredential());
+            _serviceBusSender = _serviceBusClient.CreateSender(Environment.GetEnvironmentVariable("QueueName"));
+            _telemetryClient = telemetryClient;
+        }
 
         [FunctionName("EhConsumer")]
-        public static async Task Run([EventHubTrigger("%EhName%", Connection = "EhNameSpace")] EventData[] events, ILogger log, PartitionContext partitionContext)
+        public async Task Run([EventHubTrigger("%EhName%", Connection = "EhNameSpace")] EventData[] events, ILogger log, PartitionContext partitionContext)
         {
+            
+
             var exceptions = new List<Exception>();
 
-            var messageBatch = await _sender.CreateMessageBatchAsync();
+            var messageBatch = await _serviceBusSender.CreateMessageBatchAsync();
             foreach (EventData eventData in events)
             {
                 //TODO: Deserialize against Azure Schema Registry Here
@@ -32,8 +43,8 @@ namespace CDC
 
                     if (!messageBatch.TryAddMessage(message))
                     {
-                        await _sender.SendMessagesAsync(messageBatch);
-                        messageBatch = await _sender.CreateMessageBatchAsync();
+                        await _serviceBusSender.SendMessagesAsync(messageBatch);
+                        messageBatch = await _serviceBusSender.CreateMessageBatchAsync();
 
                         if (!messageBatch.TryAddMessage(message))
                         {
@@ -41,7 +52,7 @@ namespace CDC
                         }
                     }
 
-                    await _sender.SendMessagesAsync(messageBatch);
+                    await _serviceBusSender.SendMessagesAsync(messageBatch);
                     Console.WriteLine($"Sent {messageBatch.Count} messages to Service Bus session ID {partitionContext.PartitionId}");
                 }
                 catch (Exception e)

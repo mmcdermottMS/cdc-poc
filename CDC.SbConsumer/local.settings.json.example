@@ -1,9 +1,9 @@
 {
-    "IsEncrypted": false,
+  "IsEncrypted": false,
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet",
-    "ServiceBusHostName": "{ServiceBusHost}.servicebus.windows.net",
+    "ServiceBusConnection__fullyQualifiedNamespace": "{ServiceBusHost}.servicebus.windows.net",
     "QueueName": "addresses"
   }
 }
