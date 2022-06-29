@@ -27,6 +27,7 @@ resource fxAppServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
   properties: {
     zoneRedundant: zoneRedundant
     reserved: true
+    maximumElasticWorkerCount: 20
   }
   sku: {
     name: 'EP1'

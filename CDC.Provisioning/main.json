@@ -1,0 +1,648 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.7.4.23292",
+      "templateHash": "5837878009833142652"
+    }
+  },
+  "parameters": {
+    "timeStamp": {
+      "type": "string",
+      "defaultValue": "[utcNow('yyyyMMddHHmm')]"
+    },
+    "appName": {
+      "type": "string"
+    },
+    "locationCode": {
+      "type": "string"
+    },
+    "storageSkuName": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "zoneRedundant": {
+      "type": "bool",
+      "defaultValue": false
+    }
+  },
+  "variables": {
+    "resourcePrefix": "[format('{0}-{1}', parameters('appName'), parameters('locationCode'))]",
+    "functionApps": [
+      {
+        "functionAppNameSuffix": "ehConsumer",
+        "storageAccountNameSuffix": "ehconsumer",
+        "dockerImageAndTag": "cdcehconsumer:latest"
+      },
+      {
+        "functionAppNameSuffix": "sbConsumer",
+        "storageAccountNameSuffix": "sbconsumer",
+        "dockerImageAndTag": "cdcsbconsumer:latest"
+      }
+    ],
+    "entities": [
+      "addresses"
+    ],
+    "functionAppsCount": "[length(variables('functionApps'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[format('{0}-{1}-vnet', parameters('timeStamp'), variables('resourcePrefix'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourcePrefix": {
+            "value": "[variables('resourcePrefix')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.7.4.23292",
+              "templateHash": "9260083682204193645"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "resourcePrefix": {
+              "type": "string"
+            },
+            "virtualNetworkAddressPrefix": {
+              "type": "string",
+              "defaultValue": "10.1.0.0/20",
+              "metadata": {
+                "description": "The IP address range for all virtual networks to use."
+              }
+            },
+            "subnets": {
+              "type": "array",
+              "defaultValue": [
+                {
+                  "name": "[format('{0}-subnet-util', parameters('resourcePrefix'))]",
+                  "ipAddressRange": "10.1.0.0/22",
+                  "delegations": [],
+                  "serviceEndpoints": [
+                    {
+                      "service": "Microsoft.Storage"
+                    }
+                  ]
+                },
+                {
+                  "name": "[format('{0}-subnet-privateEndpoints', parameters('resourcePrefix'))]",
+                  "ipAddressRange": "10.1.4.0/22",
+                  "delegations": [],
+                  "serviceEndpoints": []
+                },
+                {
+                  "name": "[format('{0}-subnet-epf-01', parameters('resourcePrefix'))]",
+                  "ipAddressRange": "10.1.10.0/28",
+                  "delegations": [
+                    {
+                      "name": "[format('{0}-asp-delegation-{1}', parameters('resourcePrefix'), substring(uniqueString(deployment().name), 0, 4))]",
+                      "properties": {
+                        "serviceName": "Microsoft.Web/serverfarms"
+                      },
+                      "type": "Microsoft.Network/virtualNetworks/subnets/delegations"
+                    }
+                  ],
+                  "serviceEndpoints": [
+                    {
+                      "service": "Microsoft.Storage"
+                    }
+                  ]
+                },
+                {
+                  "name": "[format('{0}-subnet-epf-02', parameters('resourcePrefix'))]",
+                  "ipAddressRange": "10.1.10.16/28",
+                  "delegations": [
+                    {
+                      "name": "[format('{0}-asp-delegation-{1}', parameters('resourcePrefix'), substring(uniqueString(deployment().name), 0, 4))]",
+                      "properties": {
+                        "serviceName": "Microsoft.Web/serverfarms"
+                      },
+                      "type": "Microsoft.Network/virtualNetworks/subnets/delegations"
+                    }
+                  ],
+                  "serviceEndpoints": [
+                    {
+                      "service": "Microsoft.Storage"
+                    }
+                  ]
+                }
+              ],
+              "metadata": {
+                "description": "The name and IP address range for each subnet in the virtual networks."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2020-11-01",
+              "name": "[format('{0}-vnet-01', parameters('resourcePrefix'))]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "copy": [
+                  {
+                    "name": "subnets",
+                    "count": "[length(parameters('subnets'))]",
+                    "input": {
+                      "name": "[parameters('subnets')[copyIndex('subnets')].name]",
+                      "properties": {
+                        "addressPrefix": "[parameters('subnets')[copyIndex('subnets')].ipAddressRange]",
+                        "delegations": "[parameters('subnets')[copyIndex('subnets')].delegations]",
+                        "serviceEndpoints": "[parameters('subnets')[copyIndex('subnets')].serviceEndpoints]"
+                      }
+                    }
+                  }
+                ],
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('virtualNetworkAddressPrefix')]"
+                  ]
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "epfSubnets": {
+              "type": "array",
+              "value": [
+                "[resourceId('Microsoft.Network/VirtualNetworks/subnets', format('{0}-vnet-01', parameters('resourcePrefix')), format('{0}-subnet-epf-01', parameters('resourcePrefix')))]",
+                "[resourceId('Microsoft.Network/VirtualNetworks/subnets', format('{0}-vnet-01', parameters('resourcePrefix')), format('{0}-subnet-epf-02', parameters('resourcePrefix')))]",
+                "[resourceId('Microsoft.Network/VirtualNetworks/subnets', format('{0}-vnet-01', parameters('resourcePrefix')), format('{0}-subnet-epf-03', parameters('resourcePrefix')))]"
+              ]
+            },
+            "privateEndpointsSubnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/VirtualNetworks/subnets', format('{0}-vnet-01', parameters('resourcePrefix')), format('{0}-subnet-privateEndpoints', parameters('resourcePrefix')))]"
+            },
+            "virtualNetworkId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet-01', parameters('resourcePrefix')))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[format('{0}-{1}-monitoring', parameters('timeStamp'), variables('resourcePrefix'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourcePrefix": {
+            "value": "[variables('resourcePrefix')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.7.4.23292",
+              "templateHash": "1768174217270314148"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "resourcePrefix": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2021-06-01",
+              "name": "[format('{0}-law-01', parameters('resourcePrefix'))]",
+              "location": "[parameters('location')]"
+            },
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[format('{0}-ai-01', parameters('resourcePrefix'))]",
+              "location": "[parameters('location')]",
+              "kind": "web",
+              "properties": {
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-law-01', parameters('resourcePrefix')))]",
+                "Application_Type": "web"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-law-01', parameters('resourcePrefix')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "appInsightsResourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Insights/components', format('{0}-ai-01', parameters('resourcePrefix')))]"
+            },
+            "appInsightsInstrumentationKey": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', format('{0}-ai-01', parameters('resourcePrefix')))).InstrumentationKey]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[format('{0}-{1}-eventHub', parameters('timeStamp'), variables('resourcePrefix'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "eventHubNames": {
+            "value": "[variables('entities')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourcePrefix": {
+            "value": "[variables('resourcePrefix')]"
+          },
+          "zoneRedundant": {
+            "value": "[parameters('zoneRedundant')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.7.4.23292",
+              "templateHash": "9796613870683783159"
+            }
+          },
+          "parameters": {
+            "resourcePrefix": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "eventHubNames": {
+              "type": "array"
+            },
+            "zoneRedundant": {
+              "type": "bool"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.EventHub/namespaces",
+              "apiVersion": "2021-11-01",
+              "name": "[format('{0}-ehns-01', parameters('resourcePrefix'))]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "zoneRedundant": "[parameters('zoneRedundant')]"
+              },
+              "sku": {
+                "name": "Premium"
+              }
+            },
+            {
+              "copy": {
+                "name": "eventHubs",
+                "count": "[length(parameters('eventHubNames'))]"
+              },
+              "type": "Microsoft.EventHub/namespaces/eventhubs",
+              "apiVersion": "2021-11-01",
+              "name": "[format('{0}/{1}', format('{0}-ehns-01', parameters('resourcePrefix')), parameters('eventHubNames')[copyIndex()])]",
+              "properties": {
+                "partitionCount": 10
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', format('{0}-ehns-01', parameters('resourcePrefix')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "hostName": {
+              "type": "string",
+              "value": "[format('{0}.servicebus.windows.net', format('{0}-ehns-01', parameters('resourcePrefix')))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[format('{0}-{1}-serviceBus', parameters('timeStamp'), variables('resourcePrefix'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourcePrefix": {
+            "value": "[variables('resourcePrefix')]"
+          },
+          "zoneRedundant": {
+            "value": "[parameters('zoneRedundant')]"
+          },
+          "queueNames": {
+            "value": "[variables('entities')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.7.4.23292",
+              "templateHash": "9866176294939741041"
+            }
+          },
+          "parameters": {
+            "resourcePrefix": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "zoneRedundant": {
+              "type": "bool"
+            },
+            "queueNames": {
+              "type": "array"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.ServiceBus/namespaces",
+              "apiVersion": "2021-11-01",
+              "name": "[format('{0}-sbns-01', parameters('resourcePrefix'))]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "Premium"
+              },
+              "properties": {
+                "zoneRedundant": "[parameters('zoneRedundant')]"
+              }
+            },
+            {
+              "copy": {
+                "name": "queues",
+                "count": "[length(parameters('queueNames'))]"
+              },
+              "type": "Microsoft.ServiceBus/namespaces/queues",
+              "apiVersion": "2021-11-01",
+              "name": "[format('{0}/{1}', format('{0}-sbns-01', parameters('resourcePrefix')), parameters('queueNames')[copyIndex()])]",
+              "properties": {
+                "requiresSession": true
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', format('{0}-sbns-01', parameters('resourcePrefix')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "hostName": {
+              "type": "string",
+              "value": "[format('{0}.servicebus.windows.net', format('{0}-sbns-01', parameters('resourcePrefix')))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "copy": {
+        "name": "functions",
+        "count": "[length(range(0, variables('functionAppsCount')))]"
+      },
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[format('{0}-{1}-{2}', parameters('timeStamp'), variables('resourcePrefix'), variables('functionApps')[range(0, variables('functionAppsCount'))[copyIndex()]].functionAppNameSuffix)]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourcePrefix": {
+            "value": "[variables('resourcePrefix')]"
+          },
+          "storageSkuName": {
+            "value": "[parameters('storageSkuName')]"
+          },
+          "storageAccountNameSuffix": {
+            "value": "[variables('functionApps')[range(0, variables('functionAppsCount'))[copyIndex()]].storageAccountNameSuffix]"
+          },
+          "functionAppNameSuffix": {
+            "value": "[variables('functionApps')[range(0, variables('functionAppsCount'))[copyIndex()]].functionAppNameSuffix]"
+          },
+          "timeStamp": {
+            "value": "[parameters('timeStamp')]"
+          },
+          "zoneRedundant": {
+            "value": "[parameters('zoneRedundant')]"
+          },
+          "functionSubnetId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('{0}-{1}-vnet', parameters('timeStamp'), variables('resourcePrefix')))).outputs.epfSubnets.value[range(0, variables('functionAppsCount'))[copyIndex()]]]"
+          },
+          "dockerImageAndTag": {
+            "value": "[variables('functionApps')[range(0, variables('functionAppsCount'))[copyIndex()]].dockerImageAndTag]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.7.4.23292",
+              "templateHash": "17622079783922762477"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "resourcePrefix": {
+              "type": "string"
+            },
+            "storageSkuName": {
+              "type": "string"
+            },
+            "storageAccountNameSuffix": {
+              "type": "string"
+            },
+            "functionAppNameSuffix": {
+              "type": "string"
+            },
+            "timeStamp": {
+              "type": "string"
+            },
+            "zoneRedundant": {
+              "type": "bool"
+            },
+            "functionSubnetId": {
+              "type": "string"
+            },
+            "dockerImageAndTag": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2021-03-01",
+              "name": "[format('{0}-{1}-{2}-l-asp-01', parameters('team'), parameters('project'), parameters('lifeCycle'))]",
+              "kind": "elastic",
+              "location": "[parameters('location')]",
+              "properties": {
+                "zoneRedundant": "[parameters('zoneRedundant')]",
+                "reserved": true
+              },
+              "sku": {
+                "name": "EP1",
+                "tier": "ElasticPremium",
+                "capacity": "[if(parameters('zoneRedundant'), 3, 1)]"
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2021-03-01",
+              "name": "[format('{0}-fx-{1}', parameters('resourcePrefix'), parameters('functionAppNameSuffix'))]",
+              "location": "[parameters('location')]",
+              "kind": "functionapp,linux,container",
+              "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('{0}-asp-{1}', parameters('resourcePrefix'), parameters('functionAppNameSuffix')))]",
+                "httpsOnly": true,
+                "virtualNetworkSubnetId": "[parameters('functionSubnetId')]",
+                "siteConfig": {
+                  "linuxFxVersion": "[format('DOCKER|commoninfra.azurecr.io/{0}', parameters('dockerImageAndTag'))]",
+                  "vnetRouteAllEnabled": true
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', format('{0}-asp-{1}', parameters('resourcePrefix'), parameters('functionAppNameSuffix')))]",
+                "[resourceId('Microsoft.Resources/deployments', format('{0}-{1}-{2}-storage', parameters('timeStamp'), parameters('resourcePrefix'), parameters('functionAppNameSuffix')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2020-10-01",
+              "name": "[format('{0}-{1}-{2}-storage', parameters('timeStamp'), parameters('resourcePrefix'), parameters('functionAppNameSuffix'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "resourcePrefix": {
+                    "value": "[parameters('resourcePrefix')]"
+                  },
+                  "storageSkuName": {
+                    "value": "[parameters('storageSkuName')]"
+                  },
+                  "storageAccountNameSuffix": {
+                    "value": "[parameters('storageAccountNameSuffix')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.7.4.23292",
+                      "templateHash": "5040821669485459406"
+                    }
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string"
+                    },
+                    "resourcePrefix": {
+                      "type": "string"
+                    },
+                    "storageSkuName": {
+                      "type": "string"
+                    },
+                    "storageAccountNameSuffix": {
+                      "type": "string"
+                    }
+                  },
+                  "variables": {
+                    "storageResourcePrefix": "[format('{0}sa', replace(parameters('resourcePrefix'), '-', ''))]",
+                    "storageAccountName": "[format('{0}{1}', variables('storageResourcePrefix'), parameters('storageAccountNameSuffix'))]"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Storage/storageAccounts",
+                      "apiVersion": "2021-08-01",
+                      "name": "[variables('storageAccountName')]",
+                      "location": "[parameters('location')]",
+                      "sku": {
+                        "name": "[parameters('storageSkuName')]"
+                      },
+                      "kind": "StorageV2",
+                      "properties": {
+                        "accessTier": "Hot"
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "storageAccountName": {
+                      "type": "string",
+                      "value": "[variables('storageAccountName')]"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', format('{0}-{1}-monitoring', parameters('timeStamp'), variables('resourcePrefix')))]",
+        "[resourceId('Microsoft.Resources/deployments', format('{0}-{1}-vnet', parameters('timeStamp'), variables('resourcePrefix')))]"
+      ]
+    }
+  ]
+}

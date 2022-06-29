@@ -11,6 +11,7 @@ resource eventHubNameSpace 'Microsoft.EventHub/namespaces@2021-11-01' = {
   }
   sku: {
     name: 'Premium'
+    capacity: 4
   }
 }
 

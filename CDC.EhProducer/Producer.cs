@@ -10,7 +10,7 @@ namespace CDC.EhProducer
     internal class Producer
     {
         private readonly EventHubProducerClient eventHubProducerClient;
-        private const string eventHubNameSpace = "cdc-poc-eus-ehns-01.servicebus.windows.net";
+        private const string eventHubNameSpace = "cdc-poc-wus-ehns-01.servicebus.windows.net";
         private const string ehName = "addresses";
 
         public Producer()
@@ -56,36 +56,46 @@ namespace CDC.EhProducer
 
             var addressesByPartition = addresses.GroupBy(_ => Math.Abs(_.ProfileId.GetHashCode() % partitionCount)).ToDictionary(_ => _.Key, __ => __.ToList());
 
-            sw = Stopwatch.StartNew();
-            foreach (var addressPartition in addressesByPartition)
-            {
-                var eventDataBatch = await eventHubProducerClient.CreateBatchAsync(new CreateBatchOptions { PartitionId = addressPartition.Key.ToString() });
-                foreach (var address in addressPartition.Value)
-                {
-                    if (!eventDataBatch.TryAdd(new EventData(JsonConvert.SerializeObject(address))))
-                    {
-                        await eventHubProducerClient.SendAsync(eventDataBatch);
-
-                        eventDataBatch = await eventHubProducerClient.CreateBatchAsync();
-
-                        var eventData = new EventData(JsonConvert.SerializeObject(address));
-
-                        if (!eventDataBatch.TryAdd(eventData))
-                        {
-                            throw new Exception("Generated address is too big for Event Hub batch");
-                        }
-                    }
-                }
-
-                await eventHubProducerClient.SendAsync(eventDataBatch);
-                Console.WriteLine($"Generated batch of {addressPartition.Value.Count} addresses for partition ID {addressPartition.Key}");
-            }
-
             var partitionIds = await eventHubProducerClient.GetPartitionIdsAsync();
             if (partitionIds.Length != partitionCount)
                 Console.WriteLine($"WARNING: Specified partition count ({partitionCount}) does not match partition count on target Event Hub ({partitionIds.Length})");
 
+            var batches = new List<Task>();
+            foreach (var addressPartition in addressesByPartition)
+            {
+                batches.Add(SendBatch(addressPartition.Value, addressPartition.Key));
+            }
+
+            Console.WriteLine("Batch Tasks Created, awaiting all tasks...");
+            sw = Stopwatch.StartNew();
+            await Task.WhenAll(batches);
             Console.WriteLine($"{sw.ElapsedMilliseconds}ms to publish {addresses.Count} address changes messages to {partitionCount} EH partitions");
+        }
+
+
+        private async Task SendBatch(List<Address> addresses, int partitionId)
+        {
+            var sw = Stopwatch.StartNew();
+            var eventDataBatch = await eventHubProducerClient.CreateBatchAsync(new CreateBatchOptions { PartitionId = partitionId.ToString() });
+            foreach (var address in addresses)
+            {
+                if (!eventDataBatch.TryAdd(new EventData(JsonConvert.SerializeObject(address))))
+                {
+                    await eventHubProducerClient.SendAsync(eventDataBatch);
+
+                    eventDataBatch = await eventHubProducerClient.CreateBatchAsync();
+
+                    var eventData = new EventData(JsonConvert.SerializeObject(address));
+
+                    if (!eventDataBatch.TryAdd(eventData))
+                    {
+                        throw new Exception("Generated address is too big for Event Hub batch");
+                    }
+                }
+            }
+
+            await eventHubProducerClient.SendAsync(eventDataBatch);
+            Console.WriteLine($"Generated batch of {addresses.Count} addresses for partition ID {partitionId} in {sw.ElapsedMilliseconds}ms");
         }
     }
 }

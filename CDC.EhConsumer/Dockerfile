@@ -6,7 +6,7 @@ EXPOSE 80
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["EhConsumer/CDC.EhConsumer.csproj", "EhConsumer/"]
+COPY ["CDC.EhConsumer/CDC.EhConsumer.csproj", "EhConsumer/"]
 RUN dotnet restore "EhConsumer/CDC.EhConsumer.csproj"
 COPY . .
 WORKDIR "/src/EhConsumer"

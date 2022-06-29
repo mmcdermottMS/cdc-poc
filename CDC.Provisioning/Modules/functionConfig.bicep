@@ -3,10 +3,6 @@ param locationCode string
 param storageAccountNameSuffix string
 param functionAppNameSuffix string
 
-param topicAName string = 'topic-a'
-param subscriberAName string = 'subscriber-a'
-
-
 var resourcePrefix = '${appName}-${locationCode}'
 var storageResourcePrefix = format('{0}sa', replace(resourcePrefix, '-', ''))
 var storageAccountName = '${storageResourcePrefix}${storageAccountNameSuffix}'
@@ -20,7 +16,6 @@ resource kv 'Microsoft.KeyVault/vaults@2021-10-01' existing = {
 resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: '${resourcePrefix}-ai-01'
 }
-
 
 resource storage 'Microsoft.Storage/storageAccounts@2021-09-01' existing = {
   name: storageAccountName
@@ -84,7 +79,7 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' existing = {
           value: '${serviceBus.name}.servicebus.windows.net'
         }
         {
-          name: 'ServiceBusConnection__fullyQualifiedNamespac'
+          name: 'ServiceBusConnection__fullyQualifiedNamespace'
           value: '${serviceBus.name}.servicebus.windows.net'
         }
         {

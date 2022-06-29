@@ -44,11 +44,12 @@ namespace CDC.SbConsumer
                 {
                     //TODO - DO WORK HERE, DATA TRANSFORMATION AND WRITE TO COSMOSDB
 
-
+                    log.LogInformation($"Received message for Session ID {message.SessionId}");
                     await messageActions.CompleteMessageAsync(message);
 
                     _telemetryClient.TrackTrace($"ServiceBus Listener for Queue '{Environment.GetEnvironmentVariable("QueueName")}' processed message: {message.Body}");
                 }
+                //TODO: https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-exceptions
                 catch (Exception ex)
                 {
                     //await messageActions.AbandonMessageAsync(message);
