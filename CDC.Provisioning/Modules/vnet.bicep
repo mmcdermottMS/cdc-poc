@@ -24,7 +24,7 @@ param subnets array = [
   }
   {
     name: '${resourcePrefix}-subnet-epf-01'
-    ipAddressRange: '10.1.10.0/28'
+    ipAddressRange: '10.1.10.0/26'
     delegations: [
       {
         name: '${resourcePrefix}-asp-delegation-${substring(uniqueString(deployment().name), 0, 4)}'
@@ -42,7 +42,7 @@ param subnets array = [
   }
   {
     name: '${resourcePrefix}-subnet-epf-02'
-    ipAddressRange: '10.1.10.16/28'
+    ipAddressRange: '10.1.10.64/26'
     delegations: [
       {
         name: '${resourcePrefix}-asp-delegation-${substring(uniqueString(deployment().name), 0, 4)}'

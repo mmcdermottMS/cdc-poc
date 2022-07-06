@@ -1,8 +1,8 @@
-﻿namespace CDC.EhProducer
+﻿namespace CDC.Domain
 {
-    public class Address
+    public class SourceAddress
     {
-        public Guid ProfileId  { get; set; }
+        public Guid ProfileId { get; set; }
 
         public string? Street1 { get; set; }
 

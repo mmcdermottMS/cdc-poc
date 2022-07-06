@@ -1,11 +1,15 @@
 using Azure.Messaging.ServiceBus;
+using CDC.Domain;
+using CDC.Domain.Interfaces;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.ServiceBus;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CDC.SbConsumer
@@ -13,10 +17,14 @@ namespace CDC.SbConsumer
     public class SbConsumer
     {
         private readonly TelemetryClient _telemetryClient;
+        private readonly ICosmosDbService _cosmosDbService;
+        private readonly Random _random;
 
-        public SbConsumer(TelemetryClient telemetryClient)
+        public SbConsumer(TelemetryClient telemetryClient, ICosmosDbService cosmosDbService)
         {
             _telemetryClient = telemetryClient;
+            _cosmosDbService = cosmosDbService;
+            _random = new Random();
         }
 
         [FunctionName("SbConsumer")]
@@ -25,6 +33,8 @@ namespace CDC.SbConsumer
             ServiceBusMessageActions messageActions,
             ILogger log)
         {
+            var random = new Random();
+
             //Grab the existing Diagnostic-Id value from the received message.  The body of this conditional will
             //not execute if the Diagnostic-Id is not a valid string - NFR may dictate a different way of handling that condition
             if (message.ApplicationProperties.TryGetValue("Diagnostic-Id", out var objectId) && objectId is string diagnosticId)
@@ -45,6 +55,41 @@ namespace CDC.SbConsumer
                     //TODO - DO WORK HERE, DATA TRANSFORMATION AND WRITE TO COSMOSDB
 
                     log.LogInformation($"Received message for Session ID {message.SessionId}");
+                                       
+                    var sourceAddress = JsonConvert.DeserializeObject<SourceAddress>(message.Body.ToString());
+
+                    var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId);
+
+                    var zipSplit = sourceAddress.ZipCode.Split("-");
+                    if (targetAddress == null)
+                    {
+                        targetAddress = new TargetAddress()
+                        {
+                            id = Guid.NewGuid().ToString(),
+                            profileId = sourceAddress.ProfileId.ToString(),
+                            Street1 = sourceAddress.Street1,
+                            Street2 = $"{sourceAddress.Street2} - {sourceAddress.Street3}",
+                            City = sourceAddress.City,
+                            State = sourceAddress.State,
+                            Zip = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[0] : sourceAddress.ZipCode,
+                            ZipExtension = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[1] : string.Empty,
+                        };
+                    }
+                    else
+                    {
+                        targetAddress.Street1 = sourceAddress.Street1;
+                        targetAddress.Street2 = $"{sourceAddress.Street2} - {sourceAddress.Street3}";
+                        targetAddress.City = sourceAddress.City;
+                        targetAddress.State = sourceAddress.State;
+                        targetAddress.Zip = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[0] : sourceAddress.ZipCode;
+                        targetAddress.ZipExtension = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[1] : string.Empty;
+                    }
+
+                    await _cosmosDbService.UpsertTargetAddress(targetAddress);
+
+                    //Simulate a Voltage processing delay
+                    Thread.Sleep(_random.Next(250, 750));
+
                     await messageActions.CompleteMessageAsync(message);
 
                     _telemetryClient.TrackTrace($"ServiceBus Listener for Queue '{Environment.GetEnvironmentVariable("QueueName")}' processed message: {message.Body}");

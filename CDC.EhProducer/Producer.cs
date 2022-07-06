@@ -2,6 +2,7 @@
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using Bogus;
+using CDC.Domain;
 using Newtonsoft.Json;
 using System.Diagnostics;
 
@@ -32,26 +33,39 @@ namespace CDC.EhProducer
             }
 
             Randomizer.Seed = new Random(8675309);
-            var addresses = new List<Address>();
+            var addresses = new List<SourceAddress>();
 
-            var addressGenerator = new Faker<Address>()
+            var addressGenerator = new Faker<SourceAddress>()
                 .StrictMode(false)
                 .Rules((f, a) =>
                 {
-                    a.ProfileId = Guid.NewGuid();
                     a.Street1 = f.Address.StreetAddress(false);
                     a.Street2 = f.Address.SecondaryAddress();
-                    a.Street3 = f.Address.SecondaryAddress();
                     a.City = f.Address.City();
                     a.State = f.Address.StateAbbr();
-                    a.ZipCode = f.Address.ZipCode();
+                    a.ZipCode = $"{f.Address.ZipCode()}-{f.Random.Number(1000, 9999)}";
                 });
 
             var sw = Stopwatch.StartNew();
-            for (int i = 0; i < messageCount; i++)
+
+            //Set it up so that there are 5 events per profile Id to simulate multiple changes right in a 
+            //row.  Track the change ID in the Street 3 field.  When all is said and done, we'll know we processed
+            //everything in order by verifying that the Street3 field in the target DB is always 5
+
+            var numProfiles = messageCount / 5;
+            for (int i = 0; i < numProfiles; i++)
             {
-                addresses.Add(addressGenerator.Generate());
+                var profileId = Guid.NewGuid();
+                for(int j = 0; j < 5; j++)
+                {
+                    var address = addressGenerator.Generate();
+                    address.ProfileId = profileId;
+                    address.Street3 = j.ToString();
+                    addresses.Add(address);
+                }                
             }
+
+
             Console.WriteLine($"{sw.ElapsedMilliseconds}ms to generate {messageCount} addressses");
 
             var addressesByPartition = addresses.GroupBy(_ => Math.Abs(_.ProfileId.GetHashCode() % partitionCount)).ToDictionary(_ => _.Key, __ => __.ToList());
@@ -73,7 +87,7 @@ namespace CDC.EhProducer
         }
 
 
-        private async Task SendBatch(List<Address> addresses, int partitionId)
+        private async Task SendBatch(List<SourceAddress> addresses, int partitionId)
         {
             var sw = Stopwatch.StartNew();
             var eventDataBatch = await eventHubProducerClient.CreateBatchAsync(new CreateBatchOptions { PartitionId = partitionId.ToString() });

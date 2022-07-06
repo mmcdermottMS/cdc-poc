@@ -8,7 +8,7 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2021-11-01' = {
   location: location
   sku: {
     name: 'Premium'
-    capacity: 16
+    capacity: 8
   }
   properties: {
     zoneRedundant: zoneRedundant

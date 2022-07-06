@@ -2,7 +2,7 @@
   "profiles": {
     "EhProducer": {
       "commandName": "Project",
-      "commandLineArgs": "50"
+      "commandLineArgs": "10 20"
     }
   }
 }

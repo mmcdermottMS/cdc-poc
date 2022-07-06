@@ -10,15 +10,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CDC.EhConsumer
+namespace CDC.EhListener
 {
-    public static class EhConsumer
+    public static class EhListener
     {
-        private static readonly ServiceBusClient _serviceBusClient = new(Environment.GetEnvironmentVariable("ServiceBusHostName"), new DefaultAzureCredential());
-        private static readonly ServiceBusSender _serviceBusSender = _serviceBusClient.CreateSender(Environment.GetEnvironmentVariable("QueueName"));
+        private static readonly ServiceBusClient _serviceBusClient = new("cdc-poc-wus-sbns-01.servicebus.windows.net", new DefaultAzureCredential());
+        private static readonly ServiceBusSender _serviceBusSender = _serviceBusClient.CreateSender("addresses");
 
-        [FunctionName("EhConsumer")]
-        public static async Task Run([EventHubTrigger("%EhName%", Connection = "EhNameSpace")] EventData[] events, ILogger log, PartitionContext partitionContext)
+        [FunctionName("EhListener")]
+        public static async Task Run([EventHubTrigger("addresses", Connection = "EhConnString")] EventData[] events, ILogger log, PartitionContext partitionContext)
         {
             log.LogInformation($"Received {events.Length} events for partition ID {partitionContext.PartitionId}");
 

@@ -55,6 +55,10 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' existing = {
           value: '~4'
         }
         {
+          name: 'FUNCTIONS_WORKER_RUNTIME'
+          value: 'dotnet'
+        }
+        {
           name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
           value: storageAccountConnString
         }
