@@ -11,7 +11,7 @@ var functionApps = [
   {
     functionAppNameSuffix: 'ehConsumer'
     storageAccountNameSuffix: 'ehconsumer'
-    dockerImageAndTag: 'cdcehconsumer:latest'
+    dockerImageAndTag: 'cdcehlistener:latest'
   }
   {
     functionAppNameSuffix: 'sbConsumer'
@@ -62,6 +62,14 @@ module serviceBus 'Modules/serviceBus.bicep' = {
     resourcePrefix: resourcePrefix
     zoneRedundant: zoneRedundant
     queueNames: entities
+  }
+}
+
+module cosmos 'Modules/cosmos.bicep' = {
+  name: '${timeStamp}-${resourcePrefix}-cosmos'
+  params: {
+    location: location
+    resourcePrefix: resourcePrefix
   }
 }
 

@@ -86,6 +86,7 @@ namespace CDC.SbConsumer
                     }
 
                     await _cosmosDbService.UpsertTargetAddress(targetAddress);
+                    log.LogInformation($"Upserted Address");
 
                     //Simulate a Voltage processing delay
                     Thread.Sleep(_random.Next(250, 750));

@@ -1,4 +1,5 @@
-﻿using CDC.Domain.Interfaces;
+﻿using Azure.Identity;
+using CDC.Domain.Interfaces;
 using CDC.SbConsumer;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
@@ -12,10 +13,7 @@ namespace CDC
         public override void Configure(IFunctionsHostBuilder builder)
         {
             builder.Services.AddApplicationInsightsTelemetryWorkerService();
-            builder.Services.AddSingleton<ICosmosDbService>(new CosmosDbService(new CosmosClient(
-                accountEndpoint: "https://cdc-poc-wus-cdb.documents.azure.com",
-                authKeyOrResourceToken: ""
-            )));
+            builder.Services.AddSingleton<ICosmosDbService>(new CosmosDbService(new CosmosClient("https://cdc-poc-wus-cdb.documents.azure.com", new DefaultAzureCredential())));
         }
     }
 }

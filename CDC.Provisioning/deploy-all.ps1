@@ -68,7 +68,6 @@ DecoratedOutput "Set Default Resource Group to" "$targetResourceGroup"
 $deploy_output = az deployment group create --template-file main.bicep --parameters main.parameters.json --name "$timeStamp-$appName-$targetLocation-main" --parameters appName=$appName locationCode=$targetLocation
 DecoratedOutput "Executed Bicep Script"
 
-
 # TODO - refactor this to convert to JSON and pass it into the main bicep file so we only maintain this list in one spot
 $functionApps = @(
     [PSCustomObject]@{
@@ -81,13 +80,18 @@ $functionApps = @(
     }
 )
 
+$serviceBusName = "$appName-$targetLocation-sbns-01"
+$eventHubName = "$appName-$targetLocation-ehns-01"
+$cosmosAccountName = "$appName-$targetLocation-cdb"
+
+$cosmosRoleId = (az cosmosdb sql role definition create --account-name $cosmosAccountName --resource-group $targetResourceGroup --body "@cosmos.role.definition.json" --query id --output tsv)
+DecoratedOutput "Created Custom Cosmos Read/Write Role" $functionAppNameSuffix
+
 $functionApps | ForEach-Object {
     $functionAppNameSuffix = $_.AppNameSuffix
     $storageAccountSuffix = $_.StorageNameSuffix
     $storageAccountPrefix = $appName.ToString().ToLower().Replace("-", "")
     $storageAccountName = $storageAccountPrefix + $targetLocation + "sa" + $storageAccountSuffix
-    $serviceBusName = "$appName-$targetLocation-sbns-01"
-    $eventHubName = "$appName-$targetLocation-ehns-01"
 
     $functionAppIdentityId = (az functionapp identity assign --resource-group $targetResourceGroup --name "$appName-$targetLocation-fx-$functionAppNameSuffix" --query principalId --output tsv)
     DecoratedOutput "Created $functionAppNameSuffix identity:" $functionAppIdentityId
@@ -134,6 +138,9 @@ $functionApps | ForEach-Object {
     $keyVaultRoleAssignment_output = az role assignment create --assignee $functionAppIdentityId --role $keyVaultSecretsRoleId --scope "/subscriptions/$subscriptionId/resourcegroups/$commonResourceGroup/providers/Microsoft.KeyVault/vaults/common-infra-kv-01"
     DecoratedOutput "Completed role assignment of $functionAppNameSuffix to" "Key Vault"
     
+    $cosmosRoleAssiment_output = az cosmosdb sql role assignment create --account-name $cosmosAccountName --resource-group $targetResourceGroup --scope "/" --principal-id $functionAppIdentityId --role-definition-id $cosmosRoleId
+    DecoratedOutput "Assigned Custom Cosmos Role to" $functionAppNameSuffix
+
     $configDeployment_output = az deployment group create --template-file ./Modules/functionConfig.bicep --name "$timeStamp-$appName-$targetLocation-functionConfig" --parameters appName=$appName locationCode=$targetLocation storageAccountNameSuffix=$storageAccountSuffix functionAppNameSuffix=$functionAppNameSuffix
     DecoratedOutput "Executed Config Bicep Script for" $functionAppNameSuffix
 }
