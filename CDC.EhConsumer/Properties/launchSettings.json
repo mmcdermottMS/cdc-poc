@@ -1,13 +1,13 @@
 {
   "profiles": {
-    "EhConsumer": {
+    "CDC.EhListener": {
       "commandName": "Project",
-      "commandLineArgs": "--port 7124"
+      "commandLineArgs": "--port 7280"
     },
     "Docker": {
       "commandName": "Docker",
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
-      "httpPort": 30989,
+      "httpPort": 34244,
       "useSSL": false
     }
   }

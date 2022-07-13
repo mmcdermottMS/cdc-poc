@@ -98,6 +98,10 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' existing = {
           name: 'QueueName'
           value: 'addresses'
         }
+        {
+          name: 'CosmosHost'
+          value: 'https://${resourcePrefix}-cdb.documents.azure.com:443/'
+        }
       ]
     }
   }

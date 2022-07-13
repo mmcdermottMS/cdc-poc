@@ -14,11 +14,11 @@ namespace CDC.EhConsumer
 {
     public static class EhConsumer
     {
-        private static readonly ServiceBusClient _serviceBusClient = new(Environment.GetEnvironmentVariable("ServiceBusHostName"), new DefaultAzureCredential());
-        private static readonly ServiceBusSender _serviceBusSender = _serviceBusClient.CreateSender(Environment.GetEnvironmentVariable("QueueName"));
+        private static readonly ServiceBusClient _serviceBusClient = new("cdc-poc-wus-sbns-01.servicebus.windows.net", new DefaultAzureCredential());
+        private static readonly ServiceBusSender _serviceBusSender = _serviceBusClient.CreateSender("addresses");
 
         [FunctionName("EhConsumer")]
-        public static async Task Run([EventHubTrigger("%EhName%", Connection = "EhNameSpace")] EventData[] events, ILogger log, PartitionContext partitionContext)
+        public static async Task Run([EventHubTrigger("addresses", Connection = "EhConnString")] EventData[] events, ILogger log, PartitionContext partitionContext)
         {
             log.LogInformation($"Received {events.Length} events for partition ID {partitionContext.PartitionId}");
 
@@ -32,6 +32,7 @@ namespace CDC.EhConsumer
                 {
                     //TODO: Deserialize against Azure Schema Registry Here
                     var message = new ServiceBusMessage(eventData.EventBody) { SessionId = partitionContext.PartitionId };
+                    //var message = new ServiceBusMessage(eventData.EventBody);
 
                     if (!messageBatch.TryAddMessage(message))
                     {
@@ -46,7 +47,7 @@ namespace CDC.EhConsumer
                 }
                 await _serviceBusSender.SendMessagesAsync(messageBatch);
 
-                log.LogInformation($"Processed {events.Length} events for partition ID {partitionContext.PartitionId} in {sw.ElapsedMilliseconds}ms");
+                log.LogInformation($"Processed {events.Length} events to session ID {partitionContext.PartitionId} in {sw.ElapsedMilliseconds}ms");
             }
             catch (Exception e)
             {

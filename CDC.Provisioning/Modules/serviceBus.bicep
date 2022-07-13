@@ -8,7 +8,7 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2021-11-01' = {
   location: location
   sku: {
     name: 'Premium'
-    capacity: 8
+    capacity: 1
   }
   properties: {
     zoneRedundant: zoneRedundant
@@ -20,8 +20,8 @@ resource queues 'Microsoft.ServiceBus/namespaces/queues@2021-11-01' = [for queue
   parent: serviceBus
   properties: {
     requiresSession: true
-    maxMessageSizeInKilobytes: 5120
-    maxSizeInMegabytes: 20480
+    maxMessageSizeInKilobytes: 1024
+    maxSizeInMegabytes: 10240
     maxDeliveryCount: 2000
   }
 }]
