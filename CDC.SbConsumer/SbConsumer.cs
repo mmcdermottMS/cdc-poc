@@ -33,8 +33,6 @@ namespace CDC.SbConsumer
             ServiceBusMessageActions messageActions,
             ILogger log)
         {
-            var random = new Random();
-
             //Grab the existing Diagnostic-Id value from the received message.  The body of this conditional will
             //not execute if the Diagnostic-Id is not a valid string - NFR may dictate a different way of handling that condition
             if (message.ApplicationProperties.TryGetValue("Diagnostic-Id", out var objectId) && objectId is string diagnosticId)
@@ -52,8 +50,6 @@ namespace CDC.SbConsumer
 
                 try
                 {
-                    //TODO - DO WORK HERE, DATA TRANSFORMATION AND WRITE TO COSMOSDB
-
                     log.LogInformation($"Received message for Session ID {message.SessionId}");
                                        
                     var sourceAddress = JsonConvert.DeserializeObject<SourceAddress>(message.Body.ToString());
@@ -98,7 +94,7 @@ namespace CDC.SbConsumer
                 //TODO: https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-exceptions
                 catch (Exception ex)
                 {
-                    //await messageActions.AbandonMessageAsync(message);
+                    await messageActions.AbandonMessageAsync(message);
                     log.LogError(ex, $"Error consuming message from topic {Environment.GetEnvironmentVariable("SubscriberName")} for subscriber {Environment.GetEnvironmentVariable("SubscriberName")}");
 
                     //For any given failure, track the exception with the TelemetryClient and set the success flag to false.
