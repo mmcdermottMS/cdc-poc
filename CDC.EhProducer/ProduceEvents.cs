@@ -19,15 +19,25 @@ namespace CDC.EhProducer
                 return new OkObjectResult("Must specify message count and partition count");
             }
 
+            if (!int.TryParse(req.Query["numCycles"], out int cycles))
+            {
+                cycles = 1;
+            }
+
+            if (!int.TryParse(req.Query["delayMs"], out int delayMs))
+            {
+                delayMs = 0;
+            }
+
             try
             {
                 var producer = new Producer(log);
 
                 var sw = Stopwatch.StartNew();
                 await CosmosInitializer.Initalize();
-                await producer.PublishMessages(messageCount, partitionCount);
+                await producer.PublishMessages(messageCount, partitionCount, cycles, delayMs);
 
-                return new OkObjectResult($"Produced {messageCount} messages across {partitionCount} partitions in {sw.ElapsedMilliseconds}ms");
+                return new OkObjectResult($"Produced {messageCount} messages in {cycles} cycles across {partitionCount} partitions in {sw.ElapsedMilliseconds}ms");
             }
             catch (Exception ex)
             {

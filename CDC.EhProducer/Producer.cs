@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CDC.EhProducer
@@ -27,59 +28,59 @@ namespace CDC.EhProducer
             log = logger;
         }
 
-        public async Task PublishMessages(int messageCount, int partitionCount)
+        public async Task PublishMessages(int messageCount, int partitionCount, int numCycles, int delayMs)
         {
-            Randomizer.Seed = random;
-            var addresses = new List<SourceAddress>();
-
-            var addressGenerator = new Faker<SourceAddress>()
-                .StrictMode(false)
-                .Rules((f, a) =>
-                {
-                    a.Street1 = f.Address.StreetAddress(false);
-                    a.Street2 = f.Address.SecondaryAddress();
-                    a.City = f.Address.City();
-                    a.State = f.Address.StateAbbr();
-                    a.ZipCode = $"{f.Address.ZipCode()}-{f.Random.Number(1000, 9999)}";
-                });
-
-            var sw = Stopwatch.StartNew();
-
-            //Set it up so that there are 5 events per profile Id to simulate multiple changes right in a 
-            //row.  Track the change ID in the Street 3 field.  When all is said and done, we'll know we processed
-            //everything in order by verifying that the Street3 field in the target DB is always 5
-
-            var numProfiles = messageCount / 5;
-            for (int i = 0; i < numProfiles; i++)
+            for (int cycle = 0; cycle < numCycles; cycle++)
             {
-                var profileId = Guid.NewGuid();
-                for(int j = 0; j < 5; j++)
+                var sw = Stopwatch.StartNew();
+                Thread.Sleep(delayMs);
+                Randomizer.Seed = random;
+                var addresses = new List<SourceAddress>();
+
+                var addressGenerator = new Faker<SourceAddress>()
+                    .StrictMode(false)
+                    .Rules((f, a) =>
+                    {
+                        a.Street1 = f.Address.StreetAddress(false);
+                        a.Street2 = f.Address.SecondaryAddress();
+                        a.City = f.Address.City();
+                        a.State = f.Address.StateAbbr();
+                        a.ZipCode = $"{f.Address.ZipCode()}-{f.Random.Number(1000, 9999)}";
+                        a.CreatedDate = DateTime.UtcNow;
+                    });
+
+                //Set it up so that there are 5 events per profile Id to simulate multiple changes right in a 
+                //row.  Track the change ID in the Street 3 field.  When all is said and done, we'll know we processed
+                //everything in order by verifying that the Street3 field in the target DB is always 5
+
+                var numProfiles = messageCount / 5;
+                for (int i = 0; i < numProfiles; i++)
                 {
-                    var address = addressGenerator.Generate();
-                    address.ProfileId = profileId;
-                    address.Street3 = j.ToString();
-                    addresses.Add(address);
-                }                
+                    var profileId = Guid.NewGuid();
+                    for (int j = 0; j < 5; j++)
+                    {
+                        var address = addressGenerator.Generate();
+                        address.ProfileId = profileId;
+                        address.Street3 = j.ToString();
+                        addresses.Add(address);
+                    }
+                }
+
+                var addressesByPartition = addresses.GroupBy(_ => Math.Abs(_.ProfileId.GetHashCode() % partitionCount)).ToDictionary(_ => _.Key, __ => __.ToList());
+
+                var partitionIds = await eventHubProducerClient.GetPartitionIdsAsync();
+                if (partitionIds.Length != partitionCount)
+                    Console.WriteLine($"WARNING: Specified partition count ({partitionCount}) does not match partition count on target Event Hub ({partitionIds.Length})");
+
+                var batches = new List<Task>();
+                foreach (var addressPartition in addressesByPartition)
+                {
+                    batches.Add(SendBatch(addressPartition.Value, addressPartition.Key));
+                }
+                
+                await Task.WhenAll(batches);
+                log.LogInformation($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {addresses.Count} address changes messages to {partitionCount} EH partitions");
             }
-
-            log.LogInformation($"{sw.ElapsedMilliseconds}ms to generate {messageCount} addressses");
-
-            var addressesByPartition = addresses.GroupBy(_ => Math.Abs(_.ProfileId.GetHashCode() % partitionCount)).ToDictionary(_ => _.Key, __ => __.ToList());
-
-            var partitionIds = await eventHubProducerClient.GetPartitionIdsAsync();
-            if (partitionIds.Length != partitionCount)
-                Console.WriteLine($"WARNING: Specified partition count ({partitionCount}) does not match partition count on target Event Hub ({partitionIds.Length})");
-
-            var batches = new List<Task>();
-            foreach (var addressPartition in addressesByPartition)
-            {
-                batches.Add(SendBatch(addressPartition.Value, addressPartition.Key));
-            }
-
-            log.LogInformation("Batch Tasks Created, awaiting all tasks...");
-            sw = Stopwatch.StartNew();
-            await Task.WhenAll(batches);
-            log.LogInformation($"{sw.ElapsedMilliseconds}ms to publish {addresses.Count} address changes messages to {partitionCount} EH partitions");
         }
 
         private async Task SendBatch(List<SourceAddress> addresses, int partitionId)

@@ -3,6 +3,7 @@ using CDC.Domain;
 using CDC.Domain.Interfaces;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.ServiceBus;
 using Microsoft.Extensions.Logging;
@@ -88,17 +89,37 @@ namespace CDC.SbConsumer
 
                 await messageActions.CompleteMessageAsync(message);
 
-                _telemetryClient.TrackTrace($"ServiceBus Listener for Queue '{Environment.GetEnvironmentVariable("QueueName")}' processed message: {message.Body}");
+                var totalProcessingTime = (DateTime.UtcNow - sourceAddress.CreatedDate).Value.Duration().TotalMilliseconds;
+                _telemetryClient.TrackTrace($"Total processing time: {totalProcessingTime}");
             }
             //TODO: https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-exceptions
-            catch (Exception ex)
+            catch (ServiceBusException ex)
             {
                 await messageActions.AbandonMessageAsync(message);
-                log.LogError(ex, $"Error consuming message from topic {Environment.GetEnvironmentVariable("SubscriberName")} for subscriber {Environment.GetEnvironmentVariable("SubscriberName")}");
+                log.LogError(ex, $"Service Bus Exception when consuming message from topic {Environment.GetEnvironmentVariable("SubscriberName")} for subscriber {Environment.GetEnvironmentVariable("SubscriberName")}");
 
                 //For any given failure, track the exception with the TelemetryClient and set the success flag to false.
                 _telemetryClient.TrackException(ex);
                 processMessageOperation.Telemetry.Success = false;
+            }
+            catch (CosmosException ex)
+            {
+                await messageActions.AbandonMessageAsync(message);
+                log.LogError(ex, $"Service Bus Exception when consuming message from topic {Environment.GetEnvironmentVariable("SubscriberName")} for subscriber {Environment.GetEnvironmentVariable("SubscriberName")}");
+
+                //For any given failure, track the exception with the TelemetryClient and set the success flag to false.
+                _telemetryClient.TrackException(ex);
+                processMessageOperation.Telemetry.Success = false;
+            }
+            catch (Exception ex)
+            {
+                await messageActions.AbandonMessageAsync(message);
+                log.LogError(ex, $"Unknown Exception consuming message from topic {Environment.GetEnvironmentVariable("SubscriberName")} for subscriber {Environment.GetEnvironmentVariable("SubscriberName")}");
+
+                //For any given failure, track the exception with the TelemetryClient and set the success flag to false.
+                _telemetryClient.TrackException(ex);
+                processMessageOperation.Telemetry.Success = false;
+                processMessageOperation.Telemetry.Stop();
                 throw;
             }
 
