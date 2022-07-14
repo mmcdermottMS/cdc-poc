@@ -1,8 +1,14 @@
 {
   "profiles": {
-    "EhProducer": {
+    "CDC.EhProducer": {
       "commandName": "Project",
-      "commandLineArgs": "10 20"
+      "commandLineArgs": "--port 7009"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "httpPort": 34915,
+      "useSSL": false
     }
   }
 }

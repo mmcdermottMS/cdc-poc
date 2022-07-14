@@ -3,36 +3,33 @@ using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using Bogus;
 using CDC.Domain;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace CDC.EhProducer
 {
     internal class Producer
     {
         private readonly EventHubProducerClient eventHubProducerClient;
+        private readonly ILogger log;
+        private readonly Random random = new(8675309);
         private const string eventHubNameSpace = "cdc-poc-wus-ehns-01.servicebus.windows.net";
         private const string ehName = "addresses";
 
-        public Producer()
+        public Producer(ILogger logger)
         {
             eventHubProducerClient = new EventHubProducerClient(eventHubNameSpace, ehName, new DefaultAzureCredential());
+            log = logger;
         }
 
-        public async Task PublishMessages(string[] args)
+        public async Task PublishMessages(int messageCount, int partitionCount)
         {
-            if (args.Length < 2
-                || string.IsNullOrEmpty(args[0])
-                || !int.TryParse(args[0], out int messageCount)
-                || string.IsNullOrEmpty(args[1])
-                || !int.TryParse(args[1], out int partitionCount)
-                )
-            {
-                Console.WriteLine("Usage: produce {numOfMessages} {partitionCount}");
-                return;
-            }
-
-            Randomizer.Seed = new Random(8675309);
+            Randomizer.Seed = random;
             var addresses = new List<SourceAddress>();
 
             var addressGenerator = new Faker<SourceAddress>()
@@ -65,8 +62,7 @@ namespace CDC.EhProducer
                 }                
             }
 
-
-            Console.WriteLine($"{sw.ElapsedMilliseconds}ms to generate {messageCount} addressses");
+            log.LogInformation($"{sw.ElapsedMilliseconds}ms to generate {messageCount} addressses");
 
             var addressesByPartition = addresses.GroupBy(_ => Math.Abs(_.ProfileId.GetHashCode() % partitionCount)).ToDictionary(_ => _.Key, __ => __.ToList());
 
@@ -80,12 +76,11 @@ namespace CDC.EhProducer
                 batches.Add(SendBatch(addressPartition.Value, addressPartition.Key));
             }
 
-            Console.WriteLine("Batch Tasks Created, awaiting all tasks...");
+            log.LogInformation("Batch Tasks Created, awaiting all tasks...");
             sw = Stopwatch.StartNew();
             await Task.WhenAll(batches);
-            Console.WriteLine($"{sw.ElapsedMilliseconds}ms to publish {addresses.Count} address changes messages to {partitionCount} EH partitions");
+            log.LogInformation($"{sw.ElapsedMilliseconds}ms to publish {addresses.Count} address changes messages to {partitionCount} EH partitions");
         }
-
 
         private async Task SendBatch(List<SourceAddress> addresses, int partitionId)
         {
@@ -109,7 +104,7 @@ namespace CDC.EhProducer
             }
 
             await eventHubProducerClient.SendAsync(eventDataBatch);
-            Console.WriteLine($"Generated batch of {addresses.Count} addresses for partition ID {partitionId} in {sw.ElapsedMilliseconds}ms");
+            log.LogInformation($"Generated batch of {addresses.Count} addresses for partition ID {partitionId} in {sw.ElapsedMilliseconds}ms");
         }
     }
 }

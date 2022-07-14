@@ -2,8 +2,10 @@ using Azure.Identity;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Consumer;
 using Azure.Messaging.ServiceBus;
+using CDC.Domain;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -31,8 +33,10 @@ namespace CDC.EhConsumer
                 foreach (EventData eventData in events)
                 {
                     //TODO: Deserialize against Azure Schema Registry Here
-                    var message = new ServiceBusMessage(eventData.EventBody) { SessionId = partitionContext.PartitionId };
-                    //var message = new ServiceBusMessage(eventData.EventBody);
+                    var sourceAddress = JsonConvert.DeserializeObject<SourceAddress>(eventData.EventBody.ToString());
+                    var sessionId = sourceAddress.ProfileId.ToString();
+                    
+                    var message = new ServiceBusMessage(eventData.EventBody) { SessionId = sessionId };
 
                     if (!messageBatch.TryAddMessage(message))
                     {
@@ -47,7 +51,7 @@ namespace CDC.EhConsumer
                 }
                 await _serviceBusSender.SendMessagesAsync(messageBatch);
 
-                log.LogInformation($"Processed {events.Length} events to session ID {partitionContext.PartitionId} in {sw.ElapsedMilliseconds}ms");
+                log.LogInformation($"Processed {events.Length} events in {sw.ElapsedMilliseconds}ms");
             }
             catch (Exception e)
             {

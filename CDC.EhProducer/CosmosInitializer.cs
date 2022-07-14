@@ -1,4 +1,6 @@
 ﻿using Microsoft.Azure.Cosmos;
+using System;
+using System.Threading.Tasks;
 
 namespace CDC.EhProducer
 {
@@ -6,10 +8,7 @@ namespace CDC.EhProducer
     {
         internal static async Task Initalize()
         {
-            using CosmosClient cosmosClient = new CosmosClient(
-                accountEndpoint: "https://cdc-poc-wus-cdb.documents.azure.com",
-                authKeyOrResourceToken: ""
-            );
+            using CosmosClient cosmosClient = new(Environment.GetEnvironmentVariable("CosmosDbAccount"), Environment.GetEnvironmentVariable("CosmosAuthToken"));
 
             var databaseResponse = await cosmosClient.CreateDatabaseIfNotExistsAsync(id: "Customers");
 
