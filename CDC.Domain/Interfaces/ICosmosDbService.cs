@@ -2,7 +2,7 @@
 {
     public interface ICosmosDbService
     {
-        Task<TargetAddress> GetTargetAddressByProfileIdAsync(Guid profileId);
+        Task<TargetAddress> GetTargetAddressByProfileIdAsync(string profileId);
 
         Task UpsertTargetAddress(TargetAddress targetAddress);
     }

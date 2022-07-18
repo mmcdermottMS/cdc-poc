@@ -30,13 +30,14 @@ namespace CDC.EhProducer
 
         public async Task PublishMessages(int messageCount, int partitionCount, int numCycles, int delayMs)
         {
-            for (int cycle = 0; cycle < numCycles; cycle++)
+            for (int cycle = 0; cycle <= numCycles; cycle++)
             {
                 var sw = Stopwatch.StartNew();
                 Thread.Sleep(delayMs);
                 Randomizer.Seed = random;
                 var addresses = new List<SourceAddress>();
 
+                //See: https://github.com/bchavez/Bogus
                 var addressGenerator = new Faker<SourceAddress>()
                     .StrictMode(false)
                     .Rules((f, a) =>
@@ -54,13 +55,12 @@ namespace CDC.EhProducer
                 //everything in order by verifying that the Street3 field in the target DB is always 5
 
                 var numProfiles = messageCount / 5;
-                for (int i = 0; i < numProfiles; i++)
+                for (int profileId = 1; profileId <= numProfiles; profileId++)
                 {
-                    var profileId = Guid.NewGuid();
                     for (int j = 0; j < 5; j++)
                     {
                         var address = addressGenerator.Generate();
-                        address.ProfileId = profileId;
+                        address.ProfileId = profileId + (numProfiles * cycle);
                         address.Street3 = j.ToString();
                         addresses.Add(address);
                     }
@@ -70,7 +70,7 @@ namespace CDC.EhProducer
 
                 var partitionIds = await eventHubProducerClient.GetPartitionIdsAsync();
                 if (partitionIds.Length != partitionCount)
-                    Console.WriteLine($"WARNING: Specified partition count ({partitionCount}) does not match partition count on target Event Hub ({partitionIds.Length})");
+                    log.LogWarning($"WARNING: Specified partition count ({partitionCount}) does not match partition count on target Event Hub ({partitionIds.Length})");
 
                 var batches = new List<Task>();
                 foreach (var addressPartition in addressesByPartition)

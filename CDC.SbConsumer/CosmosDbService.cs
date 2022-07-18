@@ -20,7 +20,7 @@ namespace CDC.SbConsumer
             _container = _database.GetContainer("addresses");
         }
 
-        public async Task<TargetAddress> GetTargetAddressByProfileIdAsync(Guid profileId)
+        public async Task<TargetAddress> GetTargetAddressByProfileIdAsync(string profileId)
         {
             TargetAddress result = null;
             var query = new QueryDefinition(query: "SELECT * FROM addresses a WHERE a.profileId = @key").WithParameter("@key", profileId);

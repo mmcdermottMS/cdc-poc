@@ -16,11 +16,12 @@ namespace CDC.EhConsumer
 {
     public static class EhConsumer
     {
+        //TODO: move SB Host Name into config
         private static readonly ServiceBusClient _serviceBusClient = new("cdc-poc-wus-sbns-01.servicebus.windows.net", new DefaultAzureCredential());
         private static readonly ServiceBusSender _serviceBusSender = _serviceBusClient.CreateSender("addresses");
 
         [FunctionName("EhConsumer")]
-        public static async Task Run([EventHubTrigger("addresses", Connection = "EhConnString")] EventData[] events, ILogger log, PartitionContext partitionContext)
+        public static async Task Run([EventHubTrigger("addresses", Connection = "EhNameSpace")] EventData[] events, ILogger log, PartitionContext partitionContext)
         {
             log.LogInformation($"Received {events.Length} events for partition ID {partitionContext.PartitionId}");
 

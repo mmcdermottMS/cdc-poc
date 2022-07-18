@@ -2,7 +2,7 @@
 {
     public class SourceAddress
     {
-        public Guid ProfileId { get; set; }
+        public long ProfileId { get; set; }
 
         public string? Street1 { get; set; }
 
@@ -16,6 +16,6 @@
 
         public string? ZipCode { get; set; }
 
-        public DateTime? CreatedDate { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
 }

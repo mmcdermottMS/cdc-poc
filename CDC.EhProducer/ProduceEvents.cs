@@ -12,7 +12,7 @@ namespace CDC.EhProducer
     public static class ProduceEvents
     {
         [FunctionName("ProduceEvents")]
-        public static async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req, ILogger log)
+        public static async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, ILogger log)
         {
             if (!int.TryParse(req.Query["messageCount"], out int messageCount) || !int.TryParse(req.Query["partitionCount"], out int partitionCount))
             {

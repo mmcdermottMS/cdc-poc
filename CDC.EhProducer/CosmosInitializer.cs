@@ -8,11 +8,21 @@ namespace CDC.EhProducer
     {
         internal static async Task Initalize()
         {
+            //TODO: An AuthToken must be used for control plane operations such as create database or create container, you cannot use MI for that.
+            //Update code to use Managed Identity to retieve the auth token into memory and build the client that way.
             using CosmosClient cosmosClient = new(Environment.GetEnvironmentVariable("CosmosDbAccount"), Environment.GetEnvironmentVariable("CosmosAuthToken"));
 
             var databaseResponse = await cosmosClient.CreateDatabaseIfNotExistsAsync(id: "Customers");
 
-            var container = await databaseResponse.Database.CreateContainerIfNotExistsAsync(id: "addresses", partitionKeyPath: "/profileId");
+            var containerProperties = new ContainerProperties()
+            {
+                Id = "addresses",
+                PartitionKeyPath = "/profileId"
+            };
+
+            var throughputProperties = ThroughputProperties.CreateAutoscaleThroughput(20000);
+
+            var container = await databaseResponse.Database.CreateContainerIfNotExistsAsync(containerProperties, throughputProperties);
         }
     }
 }

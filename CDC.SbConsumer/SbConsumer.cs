@@ -54,7 +54,7 @@ namespace CDC.SbConsumer
 
                 var sourceAddress = JsonConvert.DeserializeObject<SourceAddress>(message.Body.ToString());
 
-                var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId);
+                var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId.ToString());
 
                 var zipSplit = sourceAddress.ZipCode.Split("-");
                 if (targetAddress == null)
@@ -69,6 +69,7 @@ namespace CDC.SbConsumer
                         State = sourceAddress.State,
                         Zip = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[0] : sourceAddress.ZipCode,
                         ZipExtension = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[1] : string.Empty,
+                        DateCreated = sourceAddress.CreatedDate
                     };
                 }
                 else
@@ -79,20 +80,22 @@ namespace CDC.SbConsumer
                     targetAddress.State = sourceAddress.State;
                     targetAddress.Zip = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[0] : sourceAddress.ZipCode;
                     targetAddress.ZipExtension = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[1] : string.Empty;
+                    targetAddress.DateUpdated = DateTime.UtcNow;
                 }
 
                 await _cosmosDbService.UpsertTargetAddress(targetAddress);
                 log.LogInformation($"Upserted Address");
 
-                //Simulate a Voltage processing delay
+                //Simulate additional processing time above and beyond the basic ETL being done above
                 Thread.Sleep(_random.Next(250, 750));
 
                 await messageActions.CompleteMessageAsync(message);
 
-                var totalProcessingTime = (DateTime.UtcNow - sourceAddress.CreatedDate).Value.Duration().TotalMilliseconds;
+                var totalProcessingTime = (DateTime.UtcNow - sourceAddress.CreatedDate).Duration().TotalMilliseconds;
                 _telemetryClient.TrackTrace($"Total processing time: {totalProcessingTime}");
             }
             //TODO: https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-exceptions
+            //TODO: Optimize these calls to elminate the repeated code
             catch (ServiceBusException ex)
             {
                 await messageActions.AbandonMessageAsync(message);

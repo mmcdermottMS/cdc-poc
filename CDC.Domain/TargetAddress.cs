@@ -22,6 +22,8 @@ namespace CDC.Domain
 
         public string? ZipExtension { get; set; }
 
-        public DateTime? DateCreated { get; set; }
+        public DateTime DateCreated { get; set; }
+
+        public DateTime DateUpdated { get; set; }
     }
 }
