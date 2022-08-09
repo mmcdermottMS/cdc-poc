@@ -351,3 +351,5 @@ MigrationBackup/
 
 local.settings.json
 /CDC.KafkaConnect/.env
+CDC.KafkaConnect/connect-distributed.properties
+CDC.KafkaConnect/mongo-connect-config.json
