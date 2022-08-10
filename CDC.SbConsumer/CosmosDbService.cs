@@ -41,7 +41,7 @@ namespace CDC.SbConsumer
 
         public async Task UpsertTargetAddress(TargetAddress targetAddress)
         {
-            var partitionKey = new PartitionKey(targetAddress.profileId);
+            var partitionKey = new PartitionKey(targetAddress.ProfileId);
             await _container.UpsertItemAsync<TargetAddress>(item: targetAddress, partitionKey: partitionKey);
         }
     }

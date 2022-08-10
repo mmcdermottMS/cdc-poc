@@ -61,8 +61,8 @@ namespace CDC.SbConsumer
                 {
                     targetAddress = new TargetAddress()
                     {
-                        id = Guid.NewGuid().ToString(),
-                        profileId = sourceAddress.ProfileId.ToString(),
+                        Id = Guid.NewGuid().ToString(),
+                        ProfileId = sourceAddress.ProfileId.ToString(),
                         Street1 = sourceAddress.Street1,
                         Street2 = $"{sourceAddress.Street2} - {sourceAddress.Street3}",
                         City = sourceAddress.City,

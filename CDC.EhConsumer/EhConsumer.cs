@@ -21,7 +21,7 @@ namespace CDC.EhConsumer
         private static readonly ServiceBusSender _serviceBusSender = _serviceBusClient.CreateSender("addresses");
 
         [FunctionName("EhConsumer")]
-        public static async Task Run([EventHubTrigger("addresses", Connection = "EhNameSpace")] EventData[] events, ILogger log, PartitionContext partitionContext)
+        public static async Task Run([EventHubTrigger("poc.customers.addresses", Connection = "EhNameSpace")] EventData[] events, ILogger log, PartitionContext partitionContext)
         {
             log.LogInformation($"Received {events.Length} events for partition ID {partitionContext.PartitionId}");
 
@@ -33,8 +33,26 @@ namespace CDC.EhConsumer
                 var messageBatch = await _serviceBusSender.CreateMessageBatchAsync();
                 foreach (EventData eventData in events)
                 {
+                    var eventBody = eventData.EventBody.ToString();
+                    var connectWrapper = JsonConvert.DeserializeObject<ConnectWrapper>(eventBody);
+
                     //TODO: Deserialize against Azure Schema Registry Here
-                    var sourceAddress = JsonConvert.DeserializeObject<SourceAddress>(eventData.EventBody.ToString());
+                    var mongoAddress = JsonConvert.DeserializeObject<MongoAddress>(connectWrapper.Payload);
+
+                    var sourceAddress = new SourceAddress()
+                    {
+                        //WARNING: This parsing should be heavily protected from failure in production,
+                        //only blind parsing for the POC
+                        ProfileId = long.Parse(mongoAddress.ProfileId.NumberLong),
+                        Street1 = mongoAddress.Street1,
+                        Street2 = mongoAddress.Street2,
+                        Street3 = mongoAddress.Street3,
+                        City = mongoAddress.City,
+                        State = mongoAddress.State,
+                        ZipCode = mongoAddress.ZipCode,
+                        CreatedDate = new DateTime().AddMilliseconds(mongoAddress.CreatedDate.CreatedDate)
+                    };
+
                     var sessionId = sourceAddress.ProfileId.ToString();
                     
                     var message = new ServiceBusMessage(eventData.EventBody) { SessionId = sessionId };

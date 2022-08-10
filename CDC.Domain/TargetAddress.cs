@@ -1,14 +1,14 @@
-﻿using System.Text.Json.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace CDC.Domain
 {
     public class TargetAddress
     {
-        [JsonPropertyName("id")]
-        public string? id { get; set; }
+        [JsonProperty("id")]
+        public string? Id { get; set; }
 
-        [JsonPropertyName("profileId")]
-        public string? profileId { get; set; }
+        [JsonProperty("profileId")]
+        public string? ProfileId { get; set; }
 
         public string? Street1 { get; set; }
 
