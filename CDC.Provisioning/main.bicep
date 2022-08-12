@@ -21,13 +21,15 @@ var functionApps = [
 ]
 
 var entities = [
-  'addresses'
+  'poc.customers.addresses'
 ]
 
+/*
 resource kv 'Microsoft.KeyVault/vaults@2021-10-01' existing = {
   name: 'common-infra-kv-01'
   scope: resourceGroup('506cf09b-823b-4baa-9155-11e70406819b', 'common-infra-rg')
 }
+*/
 
 module vnet 'Modules/vnet.bicep' = {
   name: '${timeStamp}-${resourcePrefix}-vnet'

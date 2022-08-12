@@ -3,6 +3,8 @@
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet",
-    "EhNameSpace__fullyQualifiedNamespace": "{ehName}.servicebus.windows.net"
+    "ServiceBusConnection": "{ServiceBusHostNameUri}",
+    "QueueName": "addresses",
+    "CosmosHost": "{CosmosDbHostNameUri}"
   }
 }

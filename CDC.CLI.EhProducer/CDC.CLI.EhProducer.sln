@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32630.192
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CDC.CLI.EhProducer", "CDC.CLI.EhProducer.csproj", "{D19B75E7-9492-4FAC-8F95-6063FE5B7DFA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CDC.Domain", "..\..\cdc-poc\CDC.Domain\CDC.Domain.csproj", "{18922910-2882-42F9-BC97-BF4C0FEF039C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D19B75E7-9492-4FAC-8F95-6063FE5B7DFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D19B75E7-9492-4FAC-8F95-6063FE5B7DFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D19B75E7-9492-4FAC-8F95-6063FE5B7DFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D19B75E7-9492-4FAC-8F95-6063FE5B7DFA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18922910-2882-42F9-BC97-BF4C0FEF039C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18922910-2882-42F9-BC97-BF4C0FEF039C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18922910-2882-42F9-BC97-BF4C0FEF039C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18922910-2882-42F9-BC97-BF4C0FEF039C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {55E46B3E-6DDE-4198-9932-DACF2602041B}
+	EndGlobalSection
+EndGlobal

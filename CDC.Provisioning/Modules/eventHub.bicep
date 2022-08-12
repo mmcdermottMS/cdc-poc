@@ -19,7 +19,7 @@ resource eventHubs 'Microsoft.EventHub/namespaces/eventhubs@2021-11-01' = [for e
   name: eventHubName
   parent: eventHubNameSpace
   properties: {
-    partitionCount: 20
+    partitionCount: 1
   }
 }]
 

@@ -18,7 +18,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CDC.EhConsumer", "CDC.EhCon
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CDC.EhProducer", "CDC.EhProducer\CDC.EhProducer.csproj", "{63C7B0A7-4BCB-47A2-9BF8-22057E00353E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDC.CLI.Mongo", "CDC.CLI.Mongo\CDC.CLI.Mongo.csproj", "{97E80954-5C62-405D-9F47-E1EA46AB9885}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CDC.CLI.Mongo", "CDC.CLI.Mongo\CDC.CLI.Mongo.csproj", "{97E80954-5C62-405D-9F47-E1EA46AB9885}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CDC.CLI.EhProducer", "CDC.CLI.EhProducer\CDC.CLI.EhProducer.csproj", "{DA36B58D-D370-4483-8E98-E806AC9B8A77}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -46,6 +48,10 @@ Global
 		{97E80954-5C62-405D-9F47-E1EA46AB9885}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{97E80954-5C62-405D-9F47-E1EA46AB9885}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{97E80954-5C62-405D-9F47-E1EA46AB9885}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA36B58D-D370-4483-8E98-E806AC9B8A77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA36B58D-D370-4483-8E98-E806AC9B8A77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA36B58D-D370-4483-8E98-E806AC9B8A77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA36B58D-D370-4483-8E98-E806AC9B8A77}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "EhProducer": {
+      "commandName": "Project",
+      "commandLineArgs": "10 1"
+    }
+  }
+}

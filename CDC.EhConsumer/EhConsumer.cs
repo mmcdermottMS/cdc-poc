@@ -17,11 +17,11 @@ namespace CDC.EhConsumer
     public static class EhConsumer
     {
         //TODO: move SB Host Name into config
-        private static readonly ServiceBusClient _serviceBusClient = new("cdc-poc-wus-sbns-01.servicebus.windows.net", new DefaultAzureCredential());
-        private static readonly ServiceBusSender _serviceBusSender = _serviceBusClient.CreateSender("addresses");
+        private static readonly ServiceBusClient _serviceBusClient = new(Environment.GetEnvironmentVariable("ServiceBusHostName"), new DefaultAzureCredential());
+        private static readonly ServiceBusSender _serviceBusSender = _serviceBusClient.CreateSender(Environment.GetEnvironmentVariable("QueueName"));
 
         [FunctionName("EhConsumer")]
-        public static async Task Run([EventHubTrigger("poc.customers.addresses", Connection = "EhNameSpace")] EventData[] events, ILogger log, PartitionContext partitionContext)
+        public static async Task Run([EventHubTrigger("%EhName%", Connection = "EhNameSpace")] EventData[] events, ILogger log, PartitionContext partitionContext)
         {
             log.LogInformation($"Received {events.Length} events for partition ID {partitionContext.PartitionId}");
 
@@ -39,23 +39,9 @@ namespace CDC.EhConsumer
                     //TODO: Deserialize against Azure Schema Registry Here
                     var mongoAddress = JsonConvert.DeserializeObject<MongoAddress>(connectWrapper.Payload);
 
-                    var sourceAddress = new SourceAddress()
-                    {
-                        //WARNING: This parsing should be heavily protected from failure in production,
-                        //only blind parsing for the POC
-                        ProfileId = long.Parse(mongoAddress.ProfileId.NumberLong),
-                        Street1 = mongoAddress.Street1,
-                        Street2 = mongoAddress.Street2,
-                        Street3 = mongoAddress.Street3,
-                        City = mongoAddress.City,
-                        State = mongoAddress.State,
-                        ZipCode = mongoAddress.ZipCode,
-                        CreatedDate = new DateTime().AddMilliseconds(mongoAddress.CreatedDate.CreatedDate)
-                    };
-
-                    var sessionId = sourceAddress.ProfileId.ToString();
+                    var sessionId = mongoAddress.ProfileId.NumberLong;
                     
-                    var message = new ServiceBusMessage(eventData.EventBody) { SessionId = sessionId };
+                    var message = new ServiceBusMessage(eventBody) { SessionId = sessionId };
 
                     if (!messageBatch.TryAddMessage(message))
                     {

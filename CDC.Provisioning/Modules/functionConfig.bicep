@@ -8,10 +8,12 @@ var storageResourcePrefix = format('{0}sa', replace(resourcePrefix, '-', ''))
 var storageAccountName = '${storageResourcePrefix}${storageAccountNameSuffix}'
 var functionAppName = '${resourcePrefix}-fx-${functionAppNameSuffix}'
 
+/*
 resource kv 'Microsoft.KeyVault/vaults@2021-10-01' existing = {
   name: 'common-infra-kv-01'
   scope: resourceGroup('506cf09b-823b-4baa-9155-11e70406819b', 'common-infra-rg')
 }
+*/
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: '${resourcePrefix}-ai-01'
@@ -92,15 +94,15 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' existing = {
         }
         {
           name: 'EhName'
-          value: 'addresses'
+          value: 'poc.customers.addresses'
         }
         {
           name: 'QueueName'
-          value: 'addresses'
+          value: 'poc.customers.addresses'
         }
         {
           name: 'CosmosHost'
-          value: 'https://${resourcePrefix}-cdb.documents.azure.com:443/'
+          value: 'https://${resourcePrefix}-acdb.documents.azure.com:443/'
         }
       ]
     }

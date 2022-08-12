@@ -82,7 +82,7 @@ $functionApps = @(
 
 $serviceBusName = "$appName-$targetLocation-sbns-01"
 $eventHubName = "$appName-$targetLocation-ehns-01"
-$cosmosAccountName = "$appName-$targetLocation-cdb"
+$cosmosAccountName = "$appName-$targetLocation-acdb"
 
 $cosmosRoleId = (az cosmosdb sql role definition create --account-name $cosmosAccountName --resource-group $targetResourceGroup --body "@cosmos.role.definition.json" --query id --output tsv)
 DecoratedOutput "Created Custom Cosmos Read/Write Role" $functionAppNameSuffix

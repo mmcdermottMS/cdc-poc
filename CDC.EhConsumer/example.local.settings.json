@@ -1,0 +1,11 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+    "EhNameSpace__fullyQualifiedNamespace": "{SbName}.servicebus.windows.net",
+    "ServiceBusHostName": "{SbName}.servicebus.windows.net",
+    "EhName": "poc.customers.addresses",
+    "QueueName": "poc.customers.addresses"
+  }
+}

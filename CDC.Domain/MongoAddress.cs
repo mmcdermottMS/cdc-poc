@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace CDC.EhConsumer
+namespace CDC.Domain
 {
     public class MongoAddress
     {
