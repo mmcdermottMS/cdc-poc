@@ -12,10 +12,8 @@ namespace CDC.CLI.EhProducer
     {
         private readonly EventHubProducerClient eventHubProducerClient;
         private readonly Random random = new();
-        private const string eventHubNameSpace = "cdc-poc-wus-ehns-01.servicebus.windows.net";
-        private const string ehName = "poc.customers.addresses";
 
-        public Producer()
+        public Producer(string eventHubNameSpace, string ehName)
         {
             eventHubProducerClient = new EventHubProducerClient(eventHubNameSpace, ehName, new DefaultAzureCredential());
         }

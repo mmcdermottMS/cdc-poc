@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CDC.CLI.Mongo": {
+      "commandName": "Project",
+      "commandLineArgs": "5"
+    }
+  }
+}

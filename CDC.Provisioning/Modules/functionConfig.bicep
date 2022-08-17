@@ -70,7 +70,7 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' existing = {
         }
         {
           name: 'DOCKER_REGISTRY_SERVER_URL'
-          value: 'https://commoninfra.azurecr.io'
+          value: 'https://commoninfraacr.azurecr.io'
         }
         {
           name: 'DOCKER_ENABLE_CI'

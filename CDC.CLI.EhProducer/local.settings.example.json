@@ -1,0 +1,6 @@
+﻿{
+  "CosmosAccount": "https://{CosmosAccountName}.documents.azure.com:443/",
+  "CosmosKey": "{CosmosAuthKey}",
+  "EventHubNameSpace": "{EventHubNameSpace}.servicebus.windows.net",
+  "EhName": "{EventHubName}"
+}

@@ -45,7 +45,7 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
     httpsOnly: true
     virtualNetworkSubnetId: functionSubnetId
     siteConfig: {
-      linuxFxVersion: 'DOCKER|commoninfra.azurecr.io/${dockerImageAndTag}'
+      linuxFxVersion: 'DOCKER|commoninfraacr.azurecr.io/${dockerImageAndTag}'
       vnetRouteAllEnabled: true
     }
   }

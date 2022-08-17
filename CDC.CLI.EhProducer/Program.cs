@@ -1,4 +1,5 @@
 ﻿using CDC.CLI.EhProducer;
+using Microsoft.Extensions.Configuration;
 
 namespace CDC
 {
@@ -6,8 +7,11 @@ namespace CDC
     {
         static async Task Main(string[] args)
         {
-            await CosmosInitializer.Initalize();
-            var producer = new Producer();
+            IConfigurationBuilder builder = new ConfigurationBuilder().AddJsonFile("local.settings.json", false, true);
+            IConfigurationRoot configurationRoot = builder.Build();
+
+            await CosmosInitializer.Initalize(configurationRoot["CosmosAccount"], configurationRoot["CosmosKey"]);
+            var producer = new Producer(configurationRoot["EventHubNameSpace"], configurationRoot["EhName"]);
             await producer.PublishMessages(int.Parse(args[0]), int.Parse(args[1]), 1, 0);
         }
     }

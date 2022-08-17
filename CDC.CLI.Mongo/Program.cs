@@ -1,9 +1,8 @@
 ﻿using Bogus;
 using CDC.Domain;
+using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using System.Diagnostics;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Configuration;
 
 namespace CDC.CLI.Mongo
 {
@@ -13,11 +12,10 @@ namespace CDC.CLI.Mongo
         {
             if (int.TryParse(args[0], out int numMsgs))
             {
-                using IHost host = Host.CreateDefaultBuilder(args).Build();
                 IConfigurationBuilder builder = new ConfigurationBuilder().AddJsonFile("local.settings.json", false, true);
-                IConfigurationRoot root = builder.Build();
+                IConfigurationRoot configurationRoot = builder.Build();
 
-                MongoClient mongoClient = new(root["mongoDbConnString"]);
+                MongoClient mongoClient = new(configurationRoot["mongoDbConnString"]);
 
                 var database = mongoClient.GetDatabase("Customers");
                 var collection = database.GetCollection<SourceAddress>("addresses");
@@ -26,8 +24,6 @@ namespace CDC.CLI.Mongo
                 await collection.InsertManyAsync(addresses);
 
                 Console.WriteLine($"Generated {addresses.Count} addresses");
-
-                await host.RunAsync();
             }
         }
 
@@ -52,20 +48,12 @@ namespace CDC.CLI.Mongo
                     a.CreatedDate = DateTime.UtcNow;
                 });
 
-            //Set it up so that there are 5 events per profile Id to simulate multiple changes right in a 
-            //row.  Track the change ID in the Street 3 field.  When all is said and done, we'll know we processed
-            //everything in order by verifying that the Street3 field in the target DB is always 5
-
-            var numProfiles = messageCount / 5;
-            for (int profileId = 1; profileId <= numProfiles; profileId++)
+            for (int profileId = 1; profileId <= messageCount; profileId++)
             {
-                for (int j = 0; j < 5; j++)
-                {
-                    var address = addressGenerator.Generate();
-                    address.ProfileId = profileId;
-                    address.Street3 = j.ToString();
-                    addresses.Add(address);
-                }
+                var address = addressGenerator.Generate();
+                address.ProfileId = profileId;
+                address.Street3 = "1";
+                addresses.Add(address);
             }
 
             return addresses;

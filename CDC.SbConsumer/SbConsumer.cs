@@ -55,7 +55,7 @@ namespace CDC.SbConsumer
                 var messageWrapper = JsonConvert.DeserializeObject<ConnectWrapper>(message.Body.ToString());
                 var sourceAddress = JsonConvert.DeserializeObject<MongoAddress>(messageWrapper.Payload);
 
-                var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId.ToString());
+                var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId.NumberLong);
 
                 var zipSplit = sourceAddress.ZipCode.Split("-");
                 if (targetAddress == null)
