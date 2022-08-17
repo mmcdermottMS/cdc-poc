@@ -1,4 +1,5 @@
 ﻿using Bogus;
+using Bogus.DataSets;
 using CDC.Domain;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
@@ -10,21 +11,58 @@ namespace CDC.CLI.Mongo
     {
         static async Task Main(string[] args)
         {
+            int numCycles;
+            if (!int.TryParse(args[1], out numCycles))
+            {
+                numCycles = 1;
+            }
+
             if (int.TryParse(args[0], out int numMsgs))
             {
                 IConfigurationBuilder builder = new ConfigurationBuilder().AddJsonFile("local.settings.json", false, true);
                 IConfigurationRoot configurationRoot = builder.Build();
 
                 MongoClient mongoClient = new(configurationRoot["mongoDbConnString"]);
-
                 var database = mongoClient.GetDatabase("Customers");
                 var collection = database.GetCollection<SourceAddress>("addresses");
 
-                var addresses = GenerateAddresses(numMsgs);
-                await collection.InsertManyAsync(addresses);
+                if (args[2].ToLowerInvariant() == "insert" )
+                {
+                    await InsertRecords(numMsgs, collection);
+                } 
+                else if (args[2].ToLowerInvariant() == "update")
+                {
+                    for (int i = 0; i < numCycles; i++)
+                    {
+                        await UpdateRecords(numMsgs, collection);
+                        Thread.Sleep(1000);
+                    }
+                }
+                else 
+                {
+                    Console.WriteLine("No action taken");
+                }
 
-                Console.WriteLine($"Generated {addresses.Count} addresses");
+                Console.WriteLine("Done");                
             }
+        }
+
+        static async Task InsertRecords(int count, IMongoCollection<SourceAddress> collection)
+        {
+            var addresses = GenerateAddresses(count);
+            await collection.InsertManyAsync(addresses);
+            Console.WriteLine($"Inserted {addresses.Count} addresses");
+        }
+
+        static async Task UpdateRecords(int count, IMongoCollection<SourceAddress> collection)
+        {
+            var newStreet3 = Guid.NewGuid().ToString();
+            var filter = Builders<SourceAddress>.Filter.Lt("ProfileId", count.ToString());
+            var update = Builders<SourceAddress>.Update.Set("Street3", newStreet3);
+
+            await collection.UpdateManyAsync(filter, update);
+
+            Console.WriteLine($"Updated count addresses");
         }
 
         static List<SourceAddress> GenerateAddresses(int messageCount)

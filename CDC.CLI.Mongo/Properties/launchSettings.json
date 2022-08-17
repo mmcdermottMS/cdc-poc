@@ -2,7 +2,7 @@
   "profiles": {
     "CDC.CLI.Mongo": {
       "commandName": "Project",
-      "commandLineArgs": "5"
+      "commandLineArgs": "500 update"
     }
   }
 }
