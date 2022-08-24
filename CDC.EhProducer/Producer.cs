@@ -19,12 +19,10 @@ namespace CDC.EhProducer
         private readonly EventHubProducerClient eventHubProducerClient;
         private readonly ILogger log;
         private readonly Random random = new(8675309);
-        private const string eventHubNameSpace = "cdc-poc-wus-ehns-01.servicebus.windows.net";
-        private const string ehName = "addresses";
 
         public Producer(ILogger logger)
         {
-            eventHubProducerClient = new EventHubProducerClient(eventHubNameSpace, ehName, new DefaultAzureCredential());
+            eventHubProducerClient = new EventHubProducerClient(Environment.GetEnvironmentVariable("EhNamespace"), Environment.GetEnvironmentVariable("EhName"), new DefaultAzureCredential());
             log = logger;
         }
 
@@ -47,7 +45,7 @@ namespace CDC.EhProducer
                         a.City = f.Address.City();
                         a.State = f.Address.StateAbbr();
                         a.ZipCode = $"{f.Address.ZipCode()}-{f.Random.Number(1000, 9999)}";
-                        a.CreatedDate = DateTime.UtcNow;
+                        a.CreatedDateUtc = DateTime.UtcNow;
                     });
 
                 //Set it up so that there are 5 events per profile Id to simulate multiple changes right in a 

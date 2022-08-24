@@ -52,10 +52,8 @@ namespace CDC.SbConsumer
             {
                 log.LogInformation($"Received message for Session ID {message.SessionId}");
 
-                var messageWrapper = JsonConvert.DeserializeObject<ConnectWrapper>(message.Body.ToString());
-                var sourceAddress = JsonConvert.DeserializeObject<MongoAddress>(messageWrapper.Payload);
-
-                var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId.NumberLong);
+                var sourceAddress = JsonConvert.DeserializeObject<MongoAddress>(JsonConvert.DeserializeObject<ConnectWrapper>(message.Body.ToString()).Payload);
+                var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId.Value);
 
                 var zipSplit = sourceAddress.ZipCode.Split("-");
                 if (targetAddress == null)
@@ -63,14 +61,14 @@ namespace CDC.SbConsumer
                     targetAddress = new TargetAddress()
                     {
                         Id = Guid.NewGuid().ToString(),
-                        ProfileId = sourceAddress.ProfileId.NumberLong,
+                        ProfileId = sourceAddress.ProfileId.Value,
                         Street1 = sourceAddress.Street1,
                         Street2 = $"{sourceAddress.Street2} - {sourceAddress.Street3}",
                         City = sourceAddress.City,
                         State = sourceAddress.State,
                         Zip = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[0] : sourceAddress.ZipCode,
                         ZipExtension = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[1] : string.Empty,
-                        DateCreated = new DateTime().AddMilliseconds(sourceAddress.CreatedDate.CreatedDate)
+                        CreatedDateUtc = new DateTime().AddMilliseconds(sourceAddress.CreatedDateUtc.Value)
                     };
                 }
                 else
@@ -81,7 +79,8 @@ namespace CDC.SbConsumer
                     targetAddress.State = sourceAddress.State;
                     targetAddress.Zip = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[0] : sourceAddress.ZipCode;
                     targetAddress.ZipExtension = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[1] : string.Empty;
-                    targetAddress.DateUpdated = DateTime.UtcNow;
+                    targetAddress.UpdatedDateUtc = new DateTime().AddMilliseconds(sourceAddress.UpdatedDateUtc.Value);
+                    targetAddress.LatencyMs = (DateTime.UtcNow - targetAddress.UpdatedDateUtc).Milliseconds;
                 }
 
                 await _cosmosDbService.UpsertTargetAddress(targetAddress);
@@ -92,7 +91,7 @@ namespace CDC.SbConsumer
 
                 await messageActions.CompleteMessageAsync(message);
 
-                var totalProcessingTime = (DateTime.UtcNow - targetAddress.DateCreated).Duration().TotalMilliseconds;
+                var totalProcessingTime = (DateTime.UtcNow - targetAddress.CreatedDateUtc).Duration().TotalMilliseconds;
                 _telemetryClient.TrackTrace($"Total processing time: {totalProcessingTime}");
             }
             //TODO: https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-exceptions

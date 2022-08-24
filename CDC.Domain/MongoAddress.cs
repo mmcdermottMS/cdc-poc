@@ -5,9 +5,9 @@ namespace CDC.Domain
     public class MongoAddress
     {
         [JsonProperty("_id")]
-        public IdDetails? Id { get; set; }
+        public MongoId? Id { get; set; }
 
-        public ProfileIdDetails? ProfileId { get; set; }
+        public MongoProfileId? ProfileId { get; set; }
 
         public string? Street1 { get; set; }
 
@@ -21,24 +21,26 @@ namespace CDC.Domain
 
         public string? ZipCode { get; set; }
 
-        public CreatedDateDetails? CreatedDate { get; set; }
+        public MongoDate? CreatedDateUtc { get; set; }
 
-        public class IdDetails
+        public MongoDate? UpdatedDateUtc { get; set; }
+
+        public class MongoId
         {
             [JsonProperty("$oid")]
             public string? Oid { get; set; }
         }
 
-        public class ProfileIdDetails
+        public class MongoProfileId
         {
             [JsonProperty("$numberLong")]
-            public string? NumberLong { get; set; }
+            public string? Value { get; set; }
         }
 
-        public class CreatedDateDetails
+        public class MongoDate
         {
             [JsonProperty("$date")]
-            public long CreatedDate { get; set; }
+            public long Value { get; set; }
         }
     }
 }

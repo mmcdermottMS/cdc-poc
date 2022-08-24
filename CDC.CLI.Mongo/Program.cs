@@ -83,7 +83,8 @@ namespace CDC.CLI.Mongo
                     a.City = f.Address.City();
                     a.State = f.Address.StateAbbr();
                     a.ZipCode = $"{f.Address.ZipCode()}-{f.Random.Number(1000, 9999)}";
-                    a.CreatedDate = DateTime.UtcNow;
+                    a.CreatedDateUtc = DateTime.UtcNow;
+                    a.UpdatedDateUtc = DateTime.UtcNow;
                 });
 
             for (int profileId = 1; profileId <= messageCount; profileId++)

@@ -11,7 +11,7 @@ var functionApps = [
   {
     functionAppNameSuffix: 'ehConsumer'
     storageAccountNameSuffix: 'ehconsumer'
-    dockerImageAndTag: 'cdcehlistener:latest'
+    dockerImageAndTag: 'cdcehconsumer:latest'
   }
   {
     functionAppNameSuffix: 'sbConsumer'

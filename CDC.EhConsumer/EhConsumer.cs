@@ -39,7 +39,7 @@ namespace CDC.EhConsumer
                     //TODO: Deserialize against Azure Schema Registry Here
                     var mongoAddress = JsonConvert.DeserializeObject<MongoAddress>(connectWrapper.Payload);
 
-                    var sessionId = mongoAddress.ProfileId.NumberLong;
+                    var sessionId = mongoAddress.ProfileId.Value;
                     
                     var message = new ServiceBusMessage(eventBody) { SessionId = sessionId };
 

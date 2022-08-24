@@ -16,6 +16,8 @@
 
         public string? ZipCode { get; set; }
 
-        public DateTime CreatedDate { get; set; }
+        public DateTime CreatedDateUtc { get; set; }
+
+        public DateTime UpdatedDateUtc { get; set; }
     }
 }

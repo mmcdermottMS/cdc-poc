@@ -37,7 +37,8 @@ namespace CDC.CLI.EhProducer
                         a.City = f.Address.City();
                         a.State = f.Address.StateAbbr();
                         a.ZipCode = $"{f.Address.ZipCode()}-{f.Random.Number(1000, 9999)}";
-                        a.CreatedDate = DateTime.UtcNow;
+                        a.CreatedDateUtc = DateTime.UtcNow;
+                        a.UpdatedDateUtc = DateTime.UtcNow;
                     });
 
                 //Set it up so that there are 5 events per profile Id to simulate multiple changes right in a 
@@ -61,15 +62,15 @@ namespace CDC.CLI.EhProducer
                             },
                             Payload = JsonConvert.SerializeObject(new MongoAddress()
                             {
-                                Id = new MongoAddress.IdDetails() { Oid = Guid.NewGuid().ToString() },
-                                ProfileId = new MongoAddress.ProfileIdDetails() { NumberLong = address.ProfileId.ToString() },
+                                Id = new MongoAddress.MongoId() { Oid = Guid.NewGuid().ToString() },
+                                ProfileId = new MongoAddress.MongoProfileId() { Value = address.ProfileId.ToString() },
                                 Street1 = address.Street1,
                                 Street2 = address.Street2,
                                 Street3 = address.Street3,
                                 City = address.City,
                                 State = address.State,
                                 ZipCode = address.ZipCode,
-                                CreatedDate = new MongoAddress.CreatedDateDetails() { CreatedDate = (long)address.CreatedDate.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds }
+                                CreatedDateUtc = new MongoAddress.MongoDate() { Value = (long)address.CreatedDateUtc.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds }
                             })
                         };
 
