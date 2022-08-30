@@ -47,6 +47,8 @@ Assuming you created a common/centralized RG as indicated in the above section, 
 1. Run the following command to configure the MongoDB connector:
    1. curl -X POST -H "Content-Type: application/json" --data "@mongo-connect-config.json" http://localhost:8083/connectors -w "\n"
 
+**NOTE**: for production implementations the Kafka Connector and MongoDB Plugin should be containerized and hosted within the CIAM AKS cluster
+
 
 ## Executing the POC
 
