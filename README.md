@@ -18,12 +18,12 @@ This POC also assumes you have an existing Mongo Atlas instance.  Creating a Mon
 
 ### Project Descriptions
 
-1. CDC.CLI.EhProducer - Command line project that will generate test messages/events and publish them to the target Event Hub.  Useful for validating the POC independent of MongoDB and the Kafka Connector for MongoDB
-1. CDC.CLI.Mongo - Command line project that will insert and update records within a target MongoDB instance (MongoDB Atlas) to simulate customers updating their profiles
-1. CDC.Domain - Common class library that contains shared domain objects such as DTO entities.
-1. CDC.EhConsumer - Azure Function using an Event Hub Trigger to listen for and consume events off a target Event Hub, process the events, and then publish them to a downstream Service Bus Queue
-1. CDC.EhProducer - Azure Function version of CDC.CLI.EhProducer used for producing an extreme volume of events/messages to the target Event Hub for performance and soak testing to validate NFRs
-1. CDC.SbConsumer -  Azure Function using a Service Bus Queue trigger to listen for an consume messages, by Session ID, from the queue, transform the messages, and write them to Cosmos (if they don't exist) or update them (if they do)
+1. **CDC.CLI.EhProducer** - Command line project that will generate test messages/events and publish them to the target Event Hub.  Useful for validating the POC independent of MongoDB and the Kafka Connector for MongoDB
+1. **CDC.CLI.Mongo** - Command line project that will insert and update records within a target MongoDB instance (MongoDB Atlas) to simulate customers updating their profiles
+1. **CDC.Domain** - Common class library that contains shared domain objects such as DTO entities.
+1. **CDC.EhConsumer** - Azure Function using an Event Hub Trigger to listen for and consume events off a target Event Hub, process the events, and then publish them to a downstream Service Bus Queue
+1. **CDC.EhProducer** - Azure Function version of CDC.CLI.EhProducer used for producing an extreme volume of events/messages to the target Event Hub for performance and soak testing to validate NFRs
+1. **CDC.SbConsumer** -  Azure Function using a Service Bus Queue trigger to listen for an consume messages, by Session ID, from the queue, transform the messages, and write them to Cosmos (if they don't exist) or update them (if they do)
 
 Assuming you created a common/centralized RG as indicated in the above section, and that RG has a common/centralized Azure Container Registry, you can publish (from Visual Studio) the 3 Azure Function projects to your ACR
 
@@ -32,7 +32,7 @@ Assuming you created a common/centralized RG as indicated in the above section, 
 1. Provision an Azure VM running Ubuntu 20.04
 1. Install Java 17 on the VM.  See [Install OpenJDK on Ubuntu](https://docs.microsoft.com/en-us/java/openjdk/install#install-on-ubuntu) for more details
 1. Install Apache Kafka in the home directory:
-   1. wget [https://dlcdn.apache.org/kafka/3.2.1/kafka_2.13-3.2.1.tgz](wget https://dlcdn.apache.org/kafka/3.2.1/kafka_2.13-3.2.1.tgz)
+   1. wget [https://dlcdn.apache.org/kafka/3.2.1/kafka_2.13-3.2.1.tgz](https://dlcdn.apache.org/kafka/3.2.1/kafka_2.13-3.2.1.tgz)
    1. tar -xzf kafka_2.13-3.2.1.tgz
    1. cd kafka_2.13-3.2.1
    1. Create the _connect-distributed.properties file.  Use the template in this project, replace the Event Hubs connection string placeholders with the actual values of your provisioned EH
