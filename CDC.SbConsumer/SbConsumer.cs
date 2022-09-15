@@ -79,7 +79,7 @@ namespace CDC.SbConsumer
                     targetAddress.State = sourceAddress.State;
                     targetAddress.Zip = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[0] : sourceAddress.ZipCode;
                     targetAddress.ZipExtension = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[1] : string.Empty;
-                    targetAddress.UpdatedDateUtc = new DateTime().AddMilliseconds(sourceAddress.UpdatedDateUtc.Value);
+                    targetAddress.UpdatedDateUtc = sourceAddress.UpdatedDateUtc != null ? new DateTime().AddMilliseconds(sourceAddress.UpdatedDateUtc.Value) : DateTime.UtcNow;
                     targetAddress.LatencyMs = (DateTime.UtcNow - targetAddress.UpdatedDateUtc).Milliseconds;
                 }
 

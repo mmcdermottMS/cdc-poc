@@ -14,9 +14,13 @@ namespace CDC.EhProducer
         [FunctionName("ProduceEvents")]
         public static async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, ILogger log)
         {
-            if (!int.TryParse(req.Query["messageCount"], out int messageCount) || !int.TryParse(req.Query["partitionCount"], out int partitionCount))
+            if (!int.TryParse(req.Query["messageCount"], out int messageCount))
             {
-                return new OkObjectResult("Must specify message count and partition count");
+                messageCount = 5;
+            }
+            if(messageCount < 5)
+            {
+                messageCount = 5;
             }
 
             if (!int.TryParse(req.Query["numCycles"], out int cycles))
@@ -35,9 +39,9 @@ namespace CDC.EhProducer
 
                 var sw = Stopwatch.StartNew();
                 await CosmosInitializer.Initalize();
-                await producer.PublishMessages(messageCount, partitionCount, cycles, delayMs);
+                await producer.PublishMessages(messageCount, cycles, delayMs);
 
-                return new OkObjectResult($"Produced {messageCount} messages in {cycles} cycles across {partitionCount} partitions in {sw.ElapsedMilliseconds}ms");
+                return new OkObjectResult($"Produced {messageCount} messages in {cycles} cycles in {sw.ElapsedMilliseconds}ms");
             }
             catch (Exception ex)
             {

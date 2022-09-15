@@ -22,6 +22,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CDC.CLI.Mongo", "CDC.CLI.Mo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CDC.CLI.EhProducer", "CDC.CLI.EhProducer\CDC.CLI.EhProducer.csproj", "{DA36B58D-D370-4483-8E98-E806AC9B8A77}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDC.CLI.CosmosGenerator", "CDC.CLI.CosmosGenerator\CDC.CLI.CosmosGenerator.csproj", "{B83FB95D-C1B8-4EE3-931F-BD03AE2723D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +54,10 @@ Global
 		{DA36B58D-D370-4483-8E98-E806AC9B8A77}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA36B58D-D370-4483-8E98-E806AC9B8A77}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DA36B58D-D370-4483-8E98-E806AC9B8A77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B83FB95D-C1B8-4EE3-931F-BD03AE2723D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B83FB95D-C1B8-4EE3-931F-BD03AE2723D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B83FB95D-C1B8-4EE3-931F-BD03AE2723D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B83FB95D-C1B8-4EE3-931F-BD03AE2723D5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

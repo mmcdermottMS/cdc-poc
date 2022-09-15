@@ -22,7 +22,7 @@ module storage 'storage.bicep' = {
 
 resource fxAppServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: '${resourcePrefix}-asp-${functionAppNameSuffix}'
-  kind: 'elastic'
+  kind: 'linux'
   location: location
   properties: {
     zoneRedundant: zoneRedundant
@@ -49,6 +49,14 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
       vnetRouteAllEnabled: true
     }
   }
+  /*
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      'foo': '/subscriptions/7029af60-98ff-4083-96c0-695eba78c91b/resourcegroups/common-infra-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/common-infra-mi-acrPull'
+    }
+  }
+  */
 
   dependsOn: [
     storage

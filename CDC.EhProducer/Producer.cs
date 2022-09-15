@@ -8,7 +8,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,18 +21,18 @@ namespace CDC.EhProducer
 
         public Producer(ILogger logger)
         {
-            eventHubProducerClient = new EventHubProducerClient(Environment.GetEnvironmentVariable("EhNamespace"), Environment.GetEnvironmentVariable("EhName"), new DefaultAzureCredential());
+            eventHubProducerClient = new EventHubProducerClient(Environment.GetEnvironmentVariable("EhNameSpace"), Environment.GetEnvironmentVariable("EhName"), new DefaultAzureCredential());
             log = logger;
         }
 
-        public async Task PublishMessages(int messageCount, int partitionCount, int numCycles, int delayMs)
+        public async Task PublishMessages(int messageCount, int numCycles, int delayMs)
         {
             for (int cycle = 0; cycle <= numCycles; cycle++)
             {
                 var sw = Stopwatch.StartNew();
                 Thread.Sleep(delayMs);
                 Randomizer.Seed = random;
-                var addresses = new List<SourceAddress>();
+                var addresses = new List<ConnectWrapper>();
 
                 //See: https://github.com/bchavez/Bogus
                 var addressGenerator = new Faker<SourceAddress>()
@@ -46,6 +45,7 @@ namespace CDC.EhProducer
                         a.State = f.Address.StateAbbr();
                         a.ZipCode = $"{f.Address.ZipCode()}-{f.Random.Number(1000, 9999)}";
                         a.CreatedDateUtc = DateTime.UtcNow;
+                        a.UpdatedDateUtc = DateTime.UtcNow;
                     });
 
                 //Set it up so that there are 5 events per profile Id to simulate multiple changes right in a 
@@ -60,31 +60,43 @@ namespace CDC.EhProducer
                         var address = addressGenerator.Generate();
                         address.ProfileId = profileId + (numProfiles * cycle);
                         address.Street3 = j.ToString();
-                        addresses.Add(address);
+                        
+                        var wrapper = new ConnectWrapper
+                        {
+                            Schema = new Schema
+                            {
+                                Optional = false,
+                                Type = "string"
+                            },
+                            Payload = JsonConvert.SerializeObject(new MongoAddress()
+                            {
+                                Id = new MongoAddress.MongoId() { Oid = Guid.NewGuid().ToString() },
+                                ProfileId = new MongoAddress.MongoProfileId() { Value = address.ProfileId.ToString() },
+                                Street1 = address.Street1,
+                                Street2 = address.Street2,
+                                Street3 = address.Street3,
+                                City = address.City,
+                                State = address.State,
+                                ZipCode = address.ZipCode,
+                                CreatedDateUtc = new MongoAddress.MongoDate() { Value = (long)address.CreatedDateUtc.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds },
+                                UpdatedDateUtc = new MongoAddress.MongoDate() { Value = (long)address.UpdatedDateUtc.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds }
+                            })
+                        };
+
+                        addresses.Add(wrapper);
                     }
                 }
 
-                var addressesByPartition = addresses.GroupBy(_ => Math.Abs(_.ProfileId.GetHashCode() % partitionCount)).ToDictionary(_ => _.Key, __ => __.ToList());
+                await SendBatch(addresses);
 
-                var partitionIds = await eventHubProducerClient.GetPartitionIdsAsync();
-                if (partitionIds.Length != partitionCount)
-                    log.LogWarning($"WARNING: Specified partition count ({partitionCount}) does not match partition count on target Event Hub ({partitionIds.Length})");
-
-                var batches = new List<Task>();
-                foreach (var addressPartition in addressesByPartition)
-                {
-                    batches.Add(SendBatch(addressPartition.Value, addressPartition.Key));
-                }
-                
-                await Task.WhenAll(batches);
-                log.LogInformation($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {addresses.Count} address changes messages to {partitionCount} EH partitions");
+                log.LogInformation($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {addresses.Count} address change messages");
             }
         }
 
-        private async Task SendBatch(List<SourceAddress> addresses, int partitionId)
+        private async Task SendBatch(List<ConnectWrapper> addresses)
         {
             var sw = Stopwatch.StartNew();
-            var eventDataBatch = await eventHubProducerClient.CreateBatchAsync(new CreateBatchOptions { PartitionId = partitionId.ToString() });
+            var eventDataBatch = await eventHubProducerClient.CreateBatchAsync();
             foreach (var address in addresses)
             {
                 if (!eventDataBatch.TryAdd(new EventData(JsonConvert.SerializeObject(address))))
@@ -103,7 +115,7 @@ namespace CDC.EhProducer
             }
 
             await eventHubProducerClient.SendAsync(eventDataBatch);
-            log.LogInformation($"Generated batch of {addresses.Count} addresses for partition ID {partitionId} in {sw.ElapsedMilliseconds}ms");
+            log.LogInformation($"Generated batch of {addresses.Count} addresses in {sw.ElapsedMilliseconds}ms");
         }
     }
 }
