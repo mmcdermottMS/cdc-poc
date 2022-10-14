@@ -1,11 +1,12 @@
 param timeStamp string = utcNow('yyyyMMddHHmm')
 param appName string
-param locationCode string
+param regionCode string
 param storageSkuName string
 param location string = resourceGroup().location
 param zoneRedundant bool = false
+param tenantId string
 
-var resourcePrefix = '${appName}-${locationCode}'
+var resourcePrefix = '${appName}-${regionCode}'
 
 var functionApps = [
   {
@@ -18,18 +19,25 @@ var functionApps = [
     storageAccountNameSuffix: 'sbconsumer'
     dockerImageAndTag: 'cdcsbconsumer:latest'
   }
+  {
+    functionAppNameSuffix: 'ehProducer'
+    storageAccountNameSuffix: 'ehproducer'
+    dockerImageAndTag: 'cdcehproducer:latest'
+  }
 ]
 
 var entities = [
   'poc.customers.addresses'
 ]
 
-/*
-resource kv 'Microsoft.KeyVault/vaults@2021-10-01' existing = {
-  name: 'common-infra-kv-01'
-  scope: resourceGroup('506cf09b-823b-4baa-9155-11e70406819b', 'common-infra-rg')
+module keyVault 'Modules/keyVault.bicep' = {
+  name: '${timeStamp}-${resourcePrefix}-kv'
+  params: {
+    location: location
+    resourcePrefix: resourcePrefix
+    tenantId: tenantId
+  }
 }
-*/
 
 module vnet 'Modules/vnet.bicep' = {
   name: '${timeStamp}-${resourcePrefix}-vnet'
@@ -41,6 +49,14 @@ module vnet 'Modules/vnet.bicep' = {
 
 module monitoring 'Modules/monitoring.bicep' = {
   name: '${timeStamp}-${resourcePrefix}-monitoring'
+  params: {
+    location: location
+    resourcePrefix: resourcePrefix
+  }
+}
+
+module containerRegistry 'Modules/containerRegistry.bicep' = {
+  name: '${timeStamp}-${resourcePrefix}-acr'
   params: {
     location: location
     resourcePrefix: resourcePrefix
@@ -94,3 +110,40 @@ module functions 'Modules/functions.bicep' = [for i in range(0, functionAppsCoun
     monitoring
   ]
 }]
+
+/*
+module ase01 'Modules/ase.bicep' = {
+  name: '${timeStamp}-${resourcePrefix}-ase'
+  params: {
+    location: location
+    resourcePrefix: resourcePrefix
+    subNetId: vnet.outputs.aseSubnets[0]
+    zoneRedundant: zoneRedundant
+  }
+}
+
+param webApiAspSkuName string = 'I1v2'
+param webApiAspSkuTier string = 'IsolatedV2'
+param webAppNames array = [
+  'order'
+  'rx'
+]
+
+param webApiServicePlanSku object = {
+  name: webApiAspSkuName
+  tier: webApiAspSkuTier
+  capacity: 1
+}
+
+module webApis 'Modules/webApis.bicep' = {
+  name: '${timeStamp}-${resourcePrefix}-webApis'
+  params: {
+    location: location
+    resourcePrefix: resourcePrefix
+    appServicePlanSku: webApiServicePlanSku
+    webAppNames: webAppNames
+    aseId: ase01.outputs.id
+    zoneRedundant: zoneRedundant
+  }
+}
+*/

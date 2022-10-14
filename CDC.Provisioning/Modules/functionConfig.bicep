@@ -1,40 +1,37 @@
 param appName string
-param locationCode string
+param regionCode string
 param storageAccountNameSuffix string
 param functionAppNameSuffix string
 
-var resourcePrefix = '${appName}-${locationCode}'
+var resourcePrefix = '${appName}-${regionCode}'
 var storageResourcePrefix = format('{0}sa', replace(resourcePrefix, '-', ''))
-var storageAccountName = '${storageResourcePrefix}${storageAccountNameSuffix}'
-var functionAppName = '${resourcePrefix}-fx-${functionAppNameSuffix}'
-
-/*
-resource kv 'Microsoft.KeyVault/vaults@2021-10-01' existing = {
-  name: 'common-infra-kv-01'
-  scope: resourceGroup('506cf09b-823b-4baa-9155-11e70406819b', 'common-infra-rg')
-}
-*/
+var storageAccountName = substring('${storageResourcePrefix}${storageAccountNameSuffix}', 0, 24)
+var functionAppName = '${resourcePrefix}-fa-${functionAppNameSuffix}'
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {
-  name: '${resourcePrefix}-ai-01'
+  name: '${resourcePrefix}-ai'
 }
 
 resource storage 'Microsoft.Storage/storageAccounts@2021-09-01' existing = {
   name: storageAccountName
 }
 
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2021-09-01' existing = {
+  name: format('{0}cr', replace(resourcePrefix, '-', ''))
+}
+
 resource serviceBus 'Microsoft.ServiceBus/namespaces@2021-11-01' existing = {
-  name: '${resourcePrefix}-sbns-01'
+  name: '${resourcePrefix}-sbns'
 }
 
 resource eventHub 'Microsoft.EventHub/namespaces@2021-11-01' existing = {
-  name: '${resourcePrefix}-ehns-01'
+  name: '${resourcePrefix}-ehns'
 }
 
 //https://docs.microsoft.com/en-us/azure/azure-functions/functions-identity-based-connections-tutorial
 
 //TODO: This should become a KV reference, but that means dynamically updating the storage account conn string in KV after every deployment
-//var storageAccountConnString = '@Microsoft.KeyVault(SecretUri=${kv.properties.vaultUri}/secrets/sbConsumerStorageAccountConnString${locationCode}/)'
+//var storageAccountConnString = '@Microsoft.KeyVault(SecretUri=${kv.properties.vaultUri}/secrets/sbConsumerStorageAccountConnString${regionCode}/)'
 var storageAccountConnString = 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${listKeys(storage.id, storage.apiVersion).keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
 
 resource functionApp 'Microsoft.Web/sites@2021-03-01' existing = {
@@ -70,7 +67,7 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' existing = {
         }
         {
           name: 'DOCKER_REGISTRY_SERVER_URL'
-          value: 'https://commoninfraacr.azurecr.io'
+          value: 'https://${containerRegistry.name}.azurecr.io'
         }
         {
           name: 'DOCKER_ENABLE_CI'

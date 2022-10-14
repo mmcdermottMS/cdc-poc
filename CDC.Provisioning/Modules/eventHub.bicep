@@ -4,7 +4,7 @@ param eventHubNames array
 param zoneRedundant bool
 
 resource eventHubNameSpace 'Microsoft.EventHub/namespaces@2021-11-01' = {
-  name: '${resourcePrefix}-ehns-01'
+  name: '${resourcePrefix}-ehns'
   location: location
   properties: {
     zoneRedundant: zoneRedundant

@@ -4,9 +4,10 @@ param storageSkuName string
 param storageAccountNameSuffix string
 var storageResourcePrefix = format('{0}sa', replace(resourcePrefix, '-', ''))
 var storageAccountName = '${storageResourcePrefix}${storageAccountNameSuffix}'
+var finalStorageAccountName = length(storageAccountName) > 24 ? substring(storageAccountName, 0, 24) : storageAccountName
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
-  name: storageAccountName
+  name: finalStorageAccountName
   location: location
   sku: {
     name: storageSkuName
@@ -17,4 +18,4 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
   }
 }
 
-output storageAccountName string = storageAccountName
+output storageAccountName string = finalStorageAccountName

@@ -12,7 +12,18 @@ namespace CDC
 
             await CosmosInitializer.Initalize(configurationRoot["CosmosAccount"], configurationRoot["CosmosKey"]);
             var producer = new Producer(configurationRoot["EventHubNameSpace"], configurationRoot["EhName"]);
-            await producer.PublishMessages(int.Parse(args[0]), int.Parse(args[1]), 1, 0);
+
+            if (!int.TryParse(args[1], out int numCycles))
+            { 
+                numCycles = 1; 
+            }
+
+            if(!int.TryParse(args[2], out int delayMs))
+            {
+                delayMs = 0;
+            }
+
+            await producer.PublishMessages(int.Parse(args[0]), numCycles, delayMs);
         }
     }
 }

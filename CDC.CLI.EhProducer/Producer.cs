@@ -18,9 +18,14 @@ namespace CDC.CLI.EhProducer
             eventHubProducerClient = new EventHubProducerClient(eventHubNameSpace, ehName, new DefaultAzureCredential());
         }
 
-        public async Task PublishMessages(int messageCount, int partitionCount, int numCycles, int delayMs)
+        public async Task PublishMessages(int messageCount, int numCycles, int delayMs)
         {
-            for (int cycle = 0; cycle <= numCycles; cycle++)
+            if (messageCount < 5)
+            {
+                messageCount = 5;
+            }
+
+            for (int cycle = 0; cycle < numCycles; cycle++)
             {
                 var sw = Stopwatch.StartNew();
                 Thread.Sleep(delayMs);
@@ -80,7 +85,7 @@ namespace CDC.CLI.EhProducer
 
                 await SendBatch(addresses);
 
-                Console.WriteLine($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {addresses.Count} address changes messages to {partitionCount} EH partitions");
+                Console.WriteLine($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {addresses.Count} address change messages");
             }
         }
 

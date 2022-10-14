@@ -2,7 +2,7 @@ param location string
 param resourcePrefix string
 
 @description('The IP address range for all virtual networks to use.')
-param virtualNetworkAddressPrefix string = '192.168.0.0/16'
+param virtualNetworkAddressPrefix string = '10.0.0.0/23'
 
 @description('The name and IP address range for each subnet in the virtual networks.')
 param subnets array = [

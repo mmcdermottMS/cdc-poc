@@ -4,7 +4,7 @@ param zoneRedundant bool
 param queueNames array
 
 resource serviceBus 'Microsoft.ServiceBus/namespaces@2021-11-01' = {
-  name: '${resourcePrefix}-sbns-01'
+  name: '${resourcePrefix}-sbns'
   location: location
   sku: {
     name: 'Premium'
@@ -70,14 +70,14 @@ output hostName string = '${serviceBus.name}.servicebus.windows.net'
 
 /*
 
-/subscriptions/506cf09b-823b-4baa-9155-11e70406819b/resourceGroups/cdc-poc-wus-rg/providers/microsoft.insights/autoscalesettings/cdc-poc-wus-sbns-01-Autoscale-741
+/subscriptions/506cf09b-823b-4baa-9155-11e70406819b/resourceGroups/cdc-poc-wus-rg/providers/microsoft.insights/autoscalesettings/cdc-poc-wus-sbns-Autoscale-741
 {
     "location": "West US",
     "tags": {},
     "properties": {
-        "name": "cdc-poc-wus-sbns-01-Autoscale-741",
+        "name": "cdc-poc-wus-sbns-Autoscale-741",
         "enabled": true,
-        "targetResourceUri": "/subscriptions/506cf09b-823b-4baa-9155-11e70406819b/resourceGroups/cdc-poc-wus-rg/providers/Microsoft.ServiceBus/namespaces/cdc-poc-wus-sbns-01",
+        "targetResourceUri": "/subscriptions/506cf09b-823b-4baa-9155-11e70406819b/resourceGroups/cdc-poc-wus-rg/providers/Microsoft.ServiceBus/namespaces/cdc-poc-wus-sbns",
         "profiles": [
             {
                 "name": "Auto created scale condition",
@@ -97,7 +97,7 @@ output hostName string = '${serviceBus.name}.servicebus.windows.net'
                         "metricTrigger": {
                             "metricName": "NamespaceCpuUsage",
                             "metricNamespace": "microsoft.servicebus/namespaces",
-                            "metricResourceUri": "/subscriptions/506cf09b-823b-4baa-9155-11e70406819b/resourceGroups/cdc-poc-wus-rg/providers/Microsoft.ServiceBus/namespaces/cdc-poc-wus-sbns-01",
+                            "metricResourceUri": "/subscriptions/506cf09b-823b-4baa-9155-11e70406819b/resourceGroups/cdc-poc-wus-rg/providers/Microsoft.ServiceBus/namespaces/cdc-poc-wus-sbns",
                             "operator": "GreaterThan",
                             "statistic": "Average",
                             "threshold": 70,
@@ -118,7 +118,7 @@ output hostName string = '${serviceBus.name}.servicebus.windows.net'
                         "metricTrigger": {
                             "metricName": "NamespaceMemoryUsage",
                             "metricNamespace": "microsoft.servicebus/namespaces",
-                            "metricResourceUri": "/subscriptions/506cf09b-823b-4baa-9155-11e70406819b/resourceGroups/cdc-poc-wus-rg/providers/Microsoft.ServiceBus/namespaces/cdc-poc-wus-sbns-01",
+                            "metricResourceUri": "/subscriptions/506cf09b-823b-4baa-9155-11e70406819b/resourceGroups/cdc-poc-wus-rg/providers/Microsoft.ServiceBus/namespaces/cdc-poc-wus-sbns",
                             "operator": "GreaterThan",
                             "statistic": "Average",
                             "threshold": 70,

@@ -37,7 +37,7 @@ resource fxAppServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
 }
 
 resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
-  name: '${resourcePrefix}-fx-${functionAppNameSuffix}'
+  name: '${resourcePrefix}-fa-${functionAppNameSuffix}'
   location: location
   kind: 'functionapp,linux,container'
   properties: {
@@ -45,18 +45,10 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
     httpsOnly: true
     virtualNetworkSubnetId: functionSubnetId
     siteConfig: {
-      linuxFxVersion: 'DOCKER|commoninfraacr.azurecr.io/${dockerImageAndTag}'
+      linuxFxVersion: 'DOCKER|${dockerImageAndTag}'
       vnetRouteAllEnabled: true
     }
   }
-  /*
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      'foo': '/subscriptions/7029af60-98ff-4083-96c0-695eba78c91b/resourcegroups/common-infra-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/common-infra-mi-acrPull'
-    }
-  }
-  */
 
   dependsOn: [
     storage
