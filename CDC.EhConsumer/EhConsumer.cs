@@ -72,7 +72,7 @@ namespace CDC.EhConsumer
                     }
                 }
 
-                if (DateTime.UtcNow.Millisecond > 330 && DateTime.UtcNow.Millisecond < 340)
+                if (DateTime.UtcNow.Millisecond.ToString().EndsWith("3"))
                 {
                     throw new Exception("Random Exception from EhConsumer");
                 }
