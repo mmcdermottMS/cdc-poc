@@ -86,16 +86,22 @@ if ($resources.Length -lt 2) {
 # TODO - refactor this to convert to JSON and pass it into the main bicep file so we only maintain this list in one spot
 $functionApps = @(
     [PSCustomObject]@{
-        AppNameSuffix     = 'ehConsumer';
+        AppNameSuffix     = 'fa-ehConsumer';
         StorageNameSuffix = 'ehconsumer';
     }
     [PSCustomObject]@{
-        AppNameSuffix     = 'sbConsumer';
+        AppNameSuffix     = 'fa-sbConsumer';
         StorageNameSuffix = 'sbconsumer';
     }
     [PSCustomObject]@{
-        AppNameSuffix     = 'ehProducer';
+        AppNameSuffix     = 'fa-ehProducer';
         StorageNameSuffix = 'ehproducer';
+    }
+)
+
+$webApps = @(
+    [PSCustomObject]@{
+        AppNameSuffix     = 'as-weather';
     }
 )
 
@@ -155,22 +161,24 @@ $functionApps | ForEach-Object {
     }
 
     # Add the AcrPull managed identity to the function app
-    $appIdentityAssignOutput = (az functionapp identity assign --resource-group $targetResourceGroup --name "$appName-$targetRegion-fa-$functionAppNameSuffix" --identities "/subscriptions/$subscriptionId/resourcegroups/$targetResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$acrPullIdentityName"  --query principalId --output tsv)
+    $appIdentityAssignOutput = (az functionapp identity assign --resource-group $targetResourceGroup --name "$appName-$targetRegion-$functionAppNameSuffix" --identities "/subscriptions/$subscriptionId/resourcegroups/$targetResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$acrPullIdentityName"  --query principalId --output tsv)
     DecoratedOutput "Added AcrPull MI to Function App" $functionAppNameSuffix
 
     # Add the Key Vault managed identity to the function app
-    $appIdentityAssignOutput = (az functionapp identity assign --resource-group $targetResourceGroup --name "$appName-$targetRegion-fa-$functionAppNameSuffix" --identities "/subscriptions/$subscriptionId/resourcegroups/$targetResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$kvSecretsUserIdentityName"  --query principalId --output tsv)
+    $appIdentityAssignOutput = (az functionapp identity assign --resource-group $targetResourceGroup --name "$appName-$targetRegion-$functionAppNameSuffix" --identities "/subscriptions/$subscriptionId/resourcegroups/$targetResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$kvSecretsUserIdentityName"  --query principalId --output tsv)
     DecoratedOutput "Added Key Vault Secrets User MI to Function App" $functionAppNameSuffix
 
     # Create a system managed identity for the function app.  This will be used to access storage accounts, event hubs, and service bus via managed identity
-    $functionAppIdentityId = (az functionapp identity assign --resource-group $targetResourceGroup --name "$appName-$targetRegion-fa-$functionAppNameSuffix" --query principalId --output tsv)
+    $functionAppIdentityId = (az functionapp identity assign --resource-group $targetResourceGroup --name "$appName-$targetRegion-$functionAppNameSuffix" --query principalId --output tsv)
     DecoratedOutput "Created $functionAppNameSuffix identity:" $functionAppIdentityId
 
-    # Assign function app's system identity to the storage blob data owner role
-    $storageBlobDataOwnerRoleId = (az role definition list --name "Storage Blob Data Owner" --query [0].id --output tsv)
-    DecoratedOutput "Got Storage Blog Data Role Id:" $storageBlobDataOwnerRoleId
-    $storageBlobRoleAssignment_output = az role assignment create --assignee $functionAppIdentityId --role $storageBlobDataOwnerRoleId --scope "/subscriptions/$subscriptionId/resourcegroups/$targetResourceGroup/providers/Microsoft.Storage/storageAccounts/$storageAccountName"
-    DecoratedOutput "Completed role assignment of $functionAppNameSuffix to" $storageAccountName
+    if ([string]::IsNullOrWhiteSpace($storageAccountSuffix) -ne $true) {
+        # Assign function app's system identity to the storage blob data owner role
+        $storageBlobDataOwnerRoleId = (az role definition list --name "Storage Blob Data Owner" --query [0].id --output tsv)
+        DecoratedOutput "Got Storage Blog Data Role Id:" $storageBlobDataOwnerRoleId
+        $storageBlobRoleAssignment_output = az role assignment create --assignee $functionAppIdentityId --role $storageBlobDataOwnerRoleId --scope "/subscriptions/$subscriptionId/resourcegroups/$targetResourceGroup/providers/Microsoft.Storage/storageAccounts/$storageAccountName"
+        DecoratedOutput "Completed role assignment of $functionAppNameSuffix to" $storageAccountName
+    }
 
     # Assign function app's system identity to the service bus data sender role
     $serviceBusDataSenderRoleId = (az role definition list --name "Azure Service Bus Data Sender" --query [0].id --output tsv)
@@ -203,4 +211,20 @@ $functionApps | ForEach-Object {
     # Apply the app config values to the function app.  This has to happen after the managed identities have been setup or it fails, which is why it's here and not part of the main bicep path
     $configDeployment_output = az deployment group create --template-file ./Modules/functionConfig.bicep --name "$timeStamp-$appName-$targetRegion-functionConfig" --parameters appName=$appName regionCode=$targetRegion storageAccountNameSuffix=$storageAccountSuffix functionAppNameSuffix=$functionAppNameSuffix
     DecoratedOutput "Executed Config Bicep Script for" $functionAppNameSuffix  
+}
+
+$webApps | ForEach-Object {
+    $webAppNameSuffix = $_.AppNameSuffix
+
+    # Add the AcrPull managed identity to the function app
+    $appIdentityAssignOutput = (az functionapp identity assign --resource-group $targetResourceGroup --name "$appName-$targetRegion-$webAppNameSuffix" --identities "/subscriptions/$subscriptionId/resourcegroups/$targetResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$acrPullIdentityName"  --query principalId --output tsv)
+    DecoratedOutput "Added AcrPull MI to Web App" $webAppNameSuffix
+
+    # Add the Key Vault managed identity to the function app
+    $appIdentityAssignOutput = (az functionapp identity assign --resource-group $targetResourceGroup --name "$appName-$targetRegion-$webAppNameSuffix" --identities "/subscriptions/$subscriptionId/resourcegroups/$targetResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$kvSecretsUserIdentityName"  --query principalId --output tsv)
+    DecoratedOutput "Added Key Vault Secrets User MI to Web App" $webAppNameSuffix
+
+    # Apply the app config values to the function app.  This has to happen after the managed identities have been setup or it fails, which is why it's here and not part of the main bicep path
+    $configDeployment_output = az deployment group create --template-file ./Modules/appConfig.bicep --name "$timeStamp-$appName-$targetRegion-appConfig" --parameters appName=$appName regionCode=$targetRegion appServiceNameSuffix=$webAppNameSuffix
+    DecoratedOutput "Executed Config Bicep Script for" $webAppNameSuffix  
 }

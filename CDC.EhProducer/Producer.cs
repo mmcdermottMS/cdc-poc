@@ -15,19 +15,19 @@ namespace CDC.EhProducer
 {
     internal class Producer
     {
-        private readonly EventHubProducerClient eventHubProducerClient;
-        private readonly ILogger log;
+        private readonly EventHubProducerClient _eventHubProducerClient;
+        private readonly ILogger _log;
         private readonly Random random = new(8675309);
 
         public Producer(ILogger logger)
         {
-            eventHubProducerClient = new EventHubProducerClient(Environment.GetEnvironmentVariable("EhNameSpace"), Environment.GetEnvironmentVariable("EhName"), new DefaultAzureCredential());
-            log = logger;
+            _eventHubProducerClient = new EventHubProducerClient(Environment.GetEnvironmentVariable("EhNameSpace"), Environment.GetEnvironmentVariable("EhName"), new DefaultAzureCredential());
+            _log = logger;
         }
 
         public async Task PublishMessages(int messageCount, int numCycles, int delayMs)
         {
-            for (int cycle = 0; cycle <= numCycles; cycle++)
+            for (int cycle = 0; cycle < numCycles; cycle++)
             {
                 var sw = Stopwatch.StartNew();
                 Thread.Sleep(delayMs);
@@ -48,62 +48,53 @@ namespace CDC.EhProducer
                         a.UpdatedDateUtc = DateTime.UtcNow;
                     });
 
-                //Set it up so that there are 5 events per profile Id to simulate multiple changes right in a 
-                //row.  Track the change ID in the Street 3 field.  When all is said and done, we'll know we processed
-                //everything in order by verifying that the Street3 field in the target DB is always 5
-
-                var numProfiles = messageCount / 5;
-                for (int profileId = 1; profileId <= numProfiles; profileId++)
+                for(int i = 0; i < messageCount; i++)
                 {
-                    for (int j = 0; j < 5; j++)
-                    {
-                        var address = addressGenerator.Generate();
-                        address.ProfileId = profileId + (numProfiles * cycle);
-                        address.Street3 = j.ToString();
-                        
-                        var wrapper = new ConnectWrapper
-                        {
-                            Schema = new Schema
-                            {
-                                Optional = false,
-                                Type = "string"
-                            },
-                            Payload = JsonConvert.SerializeObject(new MongoAddress()
-                            {
-                                Id = new MongoAddress.MongoId() { Oid = Guid.NewGuid().ToString() },
-                                ProfileId = new MongoAddress.MongoProfileId() { Value = address.ProfileId.ToString() },
-                                Street1 = address.Street1,
-                                Street2 = address.Street2,
-                                Street3 = address.Street3,
-                                City = address.City,
-                                State = address.State,
-                                ZipCode = address.ZipCode,
-                                CreatedDateUtc = new MongoAddress.MongoDate() { Value = (long)address.CreatedDateUtc.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds },
-                                UpdatedDateUtc = new MongoAddress.MongoDate() { Value = (long)address.UpdatedDateUtc.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds }
-                            })
-                        };
+                    var address = addressGenerator.Generate();
+                    address.ProfileId = random.Next(0, 9999);
 
-                        addresses.Add(wrapper);
-                    }
+                    var wrapper = new ConnectWrapper
+                    {
+                        Schema = new Schema
+                        {
+                            Optional = false,
+                            Type = "string"
+                        },
+                        Payload = JsonConvert.SerializeObject(new MongoAddress()
+                        {
+                            Id = new MongoAddress.MongoId() { Oid = Guid.NewGuid().ToString() },
+                            ProfileId = new MongoAddress.MongoProfileId() { Value = address.ProfileId.ToString() },
+                            Street1 = address.Street1,
+                            Street2 = address.Street2,
+                            Street3 = address.Street3,
+                            City = address.City,
+                            State = address.State,
+                            ZipCode = address.ZipCode,
+                            CreatedDateUtc = new MongoAddress.MongoDate() { Value = (long)address.CreatedDateUtc.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds },
+                            UpdatedDateUtc = new MongoAddress.MongoDate() { Value = (long)address.UpdatedDateUtc.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds }
+                        })
+                    };
+
+                    addresses.Add(wrapper);
                 }
 
                 await SendBatch(addresses);
 
-                log.LogInformation($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {addresses.Count} address change messages");
+                _log.LogInformation($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {addresses.Count} address change messages. With Changes");
             }
         }
 
         private async Task SendBatch(List<ConnectWrapper> addresses)
         {
             var sw = Stopwatch.StartNew();
-            var eventDataBatch = await eventHubProducerClient.CreateBatchAsync();
+            var eventDataBatch = await _eventHubProducerClient.CreateBatchAsync();
             foreach (var address in addresses)
             {
                 if (!eventDataBatch.TryAdd(new EventData(JsonConvert.SerializeObject(address))))
                 {
-                    await eventHubProducerClient.SendAsync(eventDataBatch);
+                    await _eventHubProducerClient.SendAsync(eventDataBatch);
 
-                    eventDataBatch = await eventHubProducerClient.CreateBatchAsync();
+                    eventDataBatch = await _eventHubProducerClient.CreateBatchAsync();
 
                     var eventData = new EventData(JsonConvert.SerializeObject(address));
 
@@ -114,8 +105,8 @@ namespace CDC.EhProducer
                 }
             }
 
-            await eventHubProducerClient.SendAsync(eventDataBatch);
-            log.LogInformation($"Generated batch of {addresses.Count} addresses in {sw.ElapsedMilliseconds}ms");
+            await _eventHubProducerClient.SendAsync(eventDataBatch);
+            _log.LogInformation($"Generated batch of {addresses.Count} addresses in {sw.ElapsedMilliseconds}ms");
         }
     }
 }

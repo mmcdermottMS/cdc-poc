@@ -96,6 +96,21 @@ param subnets array = [
       }
     ]
   }
+  {
+    suffix: 'subnet-as-01'
+    name: '${resourcePrefix}-subnet-as-01'
+    ipAddressRange: '192.168.10.192/26'
+    delegations: [
+      {
+        name: '${resourcePrefix}-asp-delegation-${substring(uniqueString(deployment().name), 0, 4)}'
+        properties: {
+          serviceName: 'Microsoft.Web/serverfarms'
+        }
+        type: 'Microsoft.Network/virtualNetworks/subnets/delegations'
+      }
+    ]
+    serviceEndpoints: []
+  }
 ]
 
 resource networkSecurityGroups 'Microsoft.Network/networkSecurityGroups@2022-01-01' = [for subnet in subnets: {
@@ -140,6 +155,10 @@ output epfSubnets array = [
   resourceId('Microsoft.Network/VirtualNetworks/subnets', virtualNetworks.name, '${resourcePrefix}-subnet-epf-01')
   resourceId('Microsoft.Network/VirtualNetworks/subnets', virtualNetworks.name, '${resourcePrefix}-subnet-epf-02')
   resourceId('Microsoft.Network/VirtualNetworks/subnets', virtualNetworks.name, '${resourcePrefix}-subnet-epf-03')
+]
+
+output appServiceSubnets array = [
+  resourceId('Microsoft.Network/VirtualNetworks/subnets', virtualNetworks.name, '${resourcePrefix}-subnet-as-01')
 ]
 
 output privateEndpointsSubnetId string = resourceId('Microsoft.Network/VirtualNetworks/subnets', virtualNetworks.name, '${resourcePrefix}-subnet-privateEndpoints')

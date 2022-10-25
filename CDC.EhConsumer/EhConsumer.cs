@@ -10,18 +10,30 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 
 namespace CDC.EhConsumer
 {
-    public static class EhConsumer
+    public class EhConsumer
     {
-        //TODO: move SB Host Name into config
-        private static readonly ServiceBusClient _serviceBusClient = new(Environment.GetEnvironmentVariable("ServiceBusHostName"), new DefaultAzureCredential());
-        private static readonly ServiceBusSender _serviceBusSender = _serviceBusClient.CreateSender(Environment.GetEnvironmentVariable("QueueName"));
+        private readonly ServiceBusClient _serviceBusClient;
+        private readonly ServiceBusSender _serviceBusSender;
+        private readonly HttpClient _httpClient;
+
+        public EhConsumer()
+        {
+            _serviceBusClient = new(Environment.GetEnvironmentVariable("ServiceBusHostName"), new DefaultAzureCredential());
+            _serviceBusSender = _serviceBusClient.CreateSender(Environment.GetEnvironmentVariable("QueueName"));
+            _httpClient = new HttpClient
+            {
+                BaseAddress = new Uri(Environment.GetEnvironmentVariable("BaseWeatherUri"))
+            };
+        }
 
         [FunctionName("EhConsumer")]
-        public static async Task Run([EventHubTrigger("%EhName%", Connection = "EhNameSpace")] EventData[] events, ILogger log, PartitionContext partitionContext)
+        public async Task Run([EventHubTrigger("%EhName%", Connection = "EhNameSpace")] EventData[] events, ILogger log, PartitionContext partitionContext)
         {
             log.LogInformation($"Received {events.Length} events for partition ID {partitionContext.PartitionId}");
 
@@ -30,6 +42,9 @@ namespace CDC.EhConsumer
             try
             {
                 var sw = Stopwatch.StartNew();
+
+                var result = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
+
                 var messageBatch = await _serviceBusSender.CreateMessageBatchAsync();
                 foreach (EventData eventData in events)
                 {
@@ -40,7 +55,9 @@ namespace CDC.EhConsumer
                     var mongoAddress = JsonConvert.DeserializeObject<MongoAddress>(connectWrapper.Payload);
 
                     var sessionId = mongoAddress.ProfileId.Value;
-                    
+
+                    log.LogInformation($"Processed Profile ID: {sessionId}");
+
                     var message = new ServiceBusMessage(eventBody) { SessionId = sessionId };
 
                     if (!messageBatch.TryAddMessage(message))
@@ -54,9 +71,16 @@ namespace CDC.EhConsumer
                         }
                     }
                 }
+
+                if (DateTime.UtcNow.Millisecond > 330 && DateTime.UtcNow.Millisecond < 340)
+                {
+                    throw new Exception("Random Exception from EhConsumer");
+                }
+
                 await _serviceBusSender.SendMessagesAsync(messageBatch);
 
                 log.LogInformation($"Processed {events.Length} events in {sw.ElapsedMilliseconds}ms");
+
             }
             catch (Exception e)
             {
@@ -66,7 +90,6 @@ namespace CDC.EhConsumer
             }
 
             // Once processing of the batch is complete, if any messages in the batch failed processing throw an exception so that there is a record of the failure.
-
             if (exceptions.Count > 1)
                 throw new AggregateException(exceptions);
 

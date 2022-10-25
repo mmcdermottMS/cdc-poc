@@ -13,7 +13,6 @@ namespace CDC
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
-            builder.Services.AddApplicationInsightsTelemetryWorkerService();
             builder.Services.AddSingleton<ICosmosDbService>(new CosmosDbService(new CosmosClient(Environment.GetEnvironmentVariable("CosmosHost"), new DefaultAzureCredential())));
         }
     }

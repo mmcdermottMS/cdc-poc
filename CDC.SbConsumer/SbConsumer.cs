@@ -1,15 +1,15 @@
 using Azure.Messaging.ServiceBus;
 using CDC.Domain;
 using CDC.Domain.Interfaces;
-using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,15 +17,18 @@ namespace CDC.SbConsumer
 {
     public class SbConsumer
     {
-        private readonly TelemetryClient _telemetryClient;
         private readonly ICosmosDbService _cosmosDbService;
         private readonly Random _random;
+        private readonly HttpClient _httpClient;
 
-        public SbConsumer(TelemetryClient telemetryClient, ICosmosDbService cosmosDbService)
+        public SbConsumer(ICosmosDbService cosmosDbService)
         {
-            _telemetryClient = telemetryClient;
             _cosmosDbService = cosmosDbService;
             _random = new Random();
+            _httpClient = new HttpClient
+            {
+                BaseAddress = new Uri(Environment.GetEnvironmentVariable("BaseWeatherUri"))
+            };
         }
 
         [FunctionName("SbConsumer")]
@@ -34,23 +37,12 @@ namespace CDC.SbConsumer
             ServiceBusMessageActions messageActions,
             ILogger log)
         {
-            message.ApplicationProperties.TryGetValue("Diagnostic-Id", out var objectId);
-            string diagnosticId = objectId as string;
 
-            //Create an activity specific to SB message processing.  See list of all
-            //available instrumented operations here: https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-end-to-end-tracing?tabs=net-standard-sdk-2#instrumented-operations
-            var processMessageActivity = new Activity("ServiceBusProcessor.ProcessMessage");
-
-            //Set the parent Id of the activity to the Diagnostic-Id from the received message.  This will 
-            //allow the Diagnostic-Id to propagate through the call chain
-            processMessageActivity.SetParentId(diagnosticId);
-
-            //Start a telemetry operation using the newly created activity
-            using var processMessageOperation = _telemetryClient.StartOperation<RequestTelemetry>(processMessageActivity);
+            var result = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
 
             try
             {
-                log.LogInformation($"Received message for Session ID {message.SessionId}");
+                log.LogInformation($"Processed Profile ID: {message.SessionId}");
 
                 var sourceAddress = JsonConvert.DeserializeObject<MongoAddress>(JsonConvert.DeserializeObject<ConnectWrapper>(message.Body.ToString()).Payload);
                 var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId.Value);
@@ -91,8 +83,13 @@ namespace CDC.SbConsumer
 
                 await messageActions.CompleteMessageAsync(message);
 
+                if (DateTime.UtcNow.Millisecond > 990)
+                {
+                    throw new Exception("Random Exception from SbConsumer");
+                }
+
                 var totalProcessingTime = (DateTime.UtcNow - targetAddress.CreatedDateUtc).Duration().TotalMilliseconds;
-                _telemetryClient.TrackTrace($"Total processing time: {totalProcessingTime}");
+                log.LogInformation($"Total processing time: {totalProcessingTime}");
             }
             //TODO: https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-exceptions
             //TODO: Optimize these calls to elminate the repeated code
@@ -101,33 +98,19 @@ namespace CDC.SbConsumer
                 await messageActions.AbandonMessageAsync(message);
                 log.LogError(ex, $"Service Bus Exception when consuming message from topic {Environment.GetEnvironmentVariable("SubscriberName")} for subscriber {Environment.GetEnvironmentVariable("SubscriberName")}");
 
-                //For any given failure, track the exception with the TelemetryClient and set the success flag to false.
-                _telemetryClient.TrackException(ex);
-                processMessageOperation.Telemetry.Success = false;
             }
             catch (CosmosException ex)
             {
                 await messageActions.AbandonMessageAsync(message);
-                log.LogError(ex, $"Service Bus Exception when consuming message from topic {Environment.GetEnvironmentVariable("SubscriberName")} for subscriber {Environment.GetEnvironmentVariable("SubscriberName")}");
-
-                //For any given failure, track the exception with the TelemetryClient and set the success flag to false.
-                _telemetryClient.TrackException(ex);
-                processMessageOperation.Telemetry.Success = false;
+                log.LogError(ex, $"Cosmos Exception when consuming message from topic {Environment.GetEnvironmentVariable("SubscriberName")} for subscriber {Environment.GetEnvironmentVariable("SubscriberName")}");
             }
             catch (Exception ex)
             {
                 await messageActions.AbandonMessageAsync(message);
                 log.LogError(ex, $"Unknown Exception consuming message from topic {Environment.GetEnvironmentVariable("SubscriberName")} for subscriber {Environment.GetEnvironmentVariable("SubscriberName")}");
 
-                //For any given failure, track the exception with the TelemetryClient and set the success flag to false.
-                _telemetryClient.TrackException(ex);
-                processMessageOperation.Telemetry.Success = false;
-                processMessageOperation.Telemetry.Stop();
                 throw;
             }
-
-            //Stop the teleemetry opration once the function has completed.
-            processMessageOperation.Telemetry.Stop();
         }
     }
 }

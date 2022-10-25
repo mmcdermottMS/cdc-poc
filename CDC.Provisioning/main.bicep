@@ -26,6 +26,13 @@ var functionApps = [
   }
 ]
 
+var webApps = [
+  {
+    appServiceNameSuffix: 'weather'
+    dockerImageAndTag: 'cdcgenericmicroserviceapi:latest'
+  }
+]
+
 var entities = [
   'poc.customers.addresses'
 ]
@@ -104,6 +111,23 @@ module functions 'Modules/functions.bicep' = [for i in range(0, functionAppsCoun
     zoneRedundant: zoneRedundant
     functionSubnetId: vnet.outputs.epfSubnets[i]
     dockerImageAndTag: functionApps[i].dockerImageAndTag
+  }
+  dependsOn: [
+    vnet
+    monitoring
+  ]
+}]
+
+var webAppsCount = length(webApps)
+module webAppServices 'Modules/appServices.bicep' = [for i in range(0, webAppsCount): {
+  name: '${timeStamp}-${resourcePrefix}-${webApps[i].appServiceNameSuffix}'
+  params: {
+    location: location
+    resourcePrefix: resourcePrefix
+    appServiceNameSuffix: webApps[i].appServiceNameSuffix
+    zoneRedundant: zoneRedundant
+    appServiceSubnetId: vnet.outputs.appServiceSubnets[i]
+    dockerImageAndTag: webApps[i].dockerImageAndTag
   }
   dependsOn: [
     vnet
