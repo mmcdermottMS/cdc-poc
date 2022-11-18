@@ -27,7 +27,7 @@ namespace CDC.SbConsumer
             _random = new Random();
             _httpClient = new HttpClient
             {
-                BaseAddress = new Uri(Environment.GetEnvironmentVariable("BaseWeatherUri"))
+                BaseAddress = new Uri(Environment.GetEnvironmentVariable("ExternalApiUri"))
             };
         }
 
@@ -83,10 +83,12 @@ namespace CDC.SbConsumer
 
                 await messageActions.CompleteMessageAsync(message);
 
+                /*
                 if (DateTime.UtcNow.Millisecond > 990)
                 {
                     throw new Exception("Random Exception from SbConsumer");
                 }
+                */
 
                 var totalProcessingTime = (DateTime.UtcNow - targetAddress.CreatedDateUtc).Duration().TotalMilliseconds;
                 log.LogInformation($"Total processing time: {totalProcessingTime}");

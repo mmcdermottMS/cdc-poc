@@ -21,20 +21,36 @@ namespace CDC.EhProducer
         {
             _httpClient = new HttpClient
             {
-                BaseAddress = new Uri(Environment.GetEnvironmentVariable("BaseWeatherUri"))
+                BaseAddress = new Uri(Environment.GetEnvironmentVariable("ExternalApiUri"))
             };
         }
 
         [FunctionName("ProduceEvents")]
-        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, ILogger log)
+        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req, ILogger log)
         {
-            var result = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
+            /*
+            var result = await _httpClient.GetAsync(string.Empty);
+
+            if (result.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                throw new Exception($"Call to API Endpoint Failed: {result.StatusCode}");
+            }
+            */
+
+
+            /*
+            var results = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
+            foreach(var result in results)
+            {
+                log.LogInformation($"Weather Result Summary: {result.Summary}");
+            }
+            */
 
             if (!int.TryParse(req.Query["messageCount"], out int messageCount))
             {
                 messageCount = 1;
             }
-            if(messageCount < 1)
+            if (messageCount < 1)
             {
                 messageCount = 1;
             }

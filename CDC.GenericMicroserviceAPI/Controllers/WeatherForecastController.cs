@@ -9,10 +9,11 @@ namespace CDC.GenericMicroserviceAPI.Controllers
     {
         private static readonly string[] Summaries = new[]
         {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
+            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+        };
 
         private readonly ILogger<WeatherForecastController> _logger;
+        private readonly Random _random = new Random();
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger)
         {
@@ -24,10 +25,15 @@ namespace CDC.GenericMicroserviceAPI.Controllers
         {
             _logger.LogInformation("Sent some weather details");
 
+            /*
             if (DateTime.UtcNow.Millisecond.ToString().EndsWith("7"))
             {
                 throw new Exception("Random Exception from Weather Service");
             }
+            */
+
+            //Fake syncrhonous processing delay between 100 and 200 ms
+            Thread.Sleep(_random.Next(100, 200));
 
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {

@@ -28,7 +28,7 @@ namespace CDC.EhConsumer
             _serviceBusSender = _serviceBusClient.CreateSender(Environment.GetEnvironmentVariable("QueueName"));
             _httpClient = new HttpClient
             {
-                BaseAddress = new Uri(Environment.GetEnvironmentVariable("BaseWeatherUri"))
+                BaseAddress = new Uri(Environment.GetEnvironmentVariable("ExternalApiUri"))
             };
         }
 
@@ -43,11 +43,15 @@ namespace CDC.EhConsumer
             {
                 var sw = Stopwatch.StartNew();
 
-                var result = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
-
                 var messageBatch = await _serviceBusSender.CreateMessageBatchAsync();
                 foreach (EventData eventData in events)
                 {
+                    var results = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
+                    foreach (var result in results)
+                    {
+                        log.LogInformation($"Weather Result Summary: {result.Summary}");
+                    }
+
                     var eventBody = eventData.EventBody.ToString();
                     var connectWrapper = JsonConvert.DeserializeObject<ConnectWrapper>(eventBody);
 
@@ -72,10 +76,12 @@ namespace CDC.EhConsumer
                     }
                 }
 
+                /*
                 if (DateTime.UtcNow.Millisecond.ToString().EndsWith("3"))
                 {
                     throw new Exception("Random Exception from EhConsumer");
                 }
+                */
 
                 await _serviceBusSender.SendMessagesAsync(messageBatch);
 
