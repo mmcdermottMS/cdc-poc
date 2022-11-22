@@ -1,13 +1,13 @@
 ﻿using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.Extensibility;
 
-namespace CDC.GenericMicroserviceAPI
+namespace CDC.EhProducer
 {
     public class CloudRoleNameTelemetryInitializer : ITelemetryInitializer
     {
         public void Initialize(ITelemetry telemetry)
         {
-            telemetry.Context.Cloud.RoleName = "ExternalApi";
+            telemetry.Context.Cloud.RoleName = "EventHubProducer";
         }
     }
 }

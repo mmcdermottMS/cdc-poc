@@ -1,5 +1,4 @@
-﻿using Azure.Identity;
-using Azure.Messaging.EventHubs;
+﻿using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using Bogus;
 using CDC.Domain;
@@ -8,30 +7,31 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace CDC.EhProducer
 {
-    internal class Producer
+    public class Producer : IProducer
     {
         private readonly EventHubProducerClient _eventHubProducerClient;
-        private readonly ILogger _log;
         private readonly Random random = new(8675309);
 
-        public Producer(ILogger logger)
+        public ILogger Log { get; set; }
+
+        public Producer(EventHubProducerClient eventHubProducerClient)
         {
-            _eventHubProducerClient = new EventHubProducerClient(Environment.GetEnvironmentVariable("EhNameSpace"), Environment.GetEnvironmentVariable("EhName"), new DefaultAzureCredential());
-            _log = logger;
+            _eventHubProducerClient = eventHubProducerClient;           
         }
 
-        public async Task PublishMessages(int messageCount, int numCycles, int delayMs)
+        public async Task PublishMessages(int messageCount, int numCycles, int delayMs, int partitionCount)
         {
             for (int cycle = 0; cycle < numCycles; cycle++)
             {
                 var sw = Stopwatch.StartNew();
-                Thread.Sleep(delayMs);
                 Randomizer.Seed = random;
+
                 var addresses = new List<ConnectWrapper>();
 
                 //See: https://github.com/bchavez/Bogus
@@ -43,18 +43,19 @@ namespace CDC.EhProducer
                         a.Street2 = f.Address.SecondaryAddress();
                         a.City = f.Address.City();
                         a.State = f.Address.StateAbbr();
-                        a.ZipCode = $"{f.Address.ZipCode()}-{f.Random.Number(1000, 9999)}";
+                        a.ZipCode = $"{f.Address.ZipCode()}-{f.Random.Number(10000, 99999)}";
                         a.CreatedDateUtc = DateTime.UtcNow;
                         a.UpdatedDateUtc = DateTime.UtcNow;
                     });
 
-                for(int i = 0; i < messageCount; i++)
+                for (int i = 0; i < messageCount; i++)
                 {
                     var address = addressGenerator.Generate();
-                    address.ProfileId = random.Next(0, 9999);
+                    address.ProfileId = random.Next(1, 500000);
 
                     var wrapper = new ConnectWrapper
                     {
+                        CustomerId = address.ProfileId,
                         Schema = new Schema
                         {
                             Optional = false,
@@ -78,35 +79,45 @@ namespace CDC.EhProducer
                     addresses.Add(wrapper);
                 }
 
-                await SendBatch(addresses);
+                await SendBatch(addresses, partitionCount);
 
-                _log.LogInformation($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {addresses.Count} address change messages. With Changes");
+                Thread.Sleep(delayMs);
+                Log.LogInformation($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {messageCount} address change messages.");
             }
         }
 
-        private async Task SendBatch(List<ConnectWrapper> addresses)
+        private async Task SendBatch(List<ConnectWrapper> addresses, int partitionCount)
         {
             var sw = Stopwatch.StartNew();
-            var eventDataBatch = await _eventHubProducerClient.CreateBatchAsync();
-            foreach (var address in addresses)
+
+            //Had trouble with the EventHubBufferedProducerClient so manually partitioning the addresses by customer Id
+            var addressBatches = addresses.GroupBy(_ => _.CustomerId % partitionCount).ToDictionary(y => y.Key, y => y.ToList());
+
+            foreach (var addresssBatch in addressBatches)
             {
-                if (!eventDataBatch.TryAdd(new EventData(JsonConvert.SerializeObject(address))))
+                var createBatchOptions = new CreateBatchOptions() { PartitionKey = addresssBatch.Key.ToString() };
+                var eventDataBatch = await _eventHubProducerClient.CreateBatchAsync(createBatchOptions);
+
+                foreach(var address in addresssBatch.Value)
                 {
-                    await _eventHubProducerClient.SendAsync(eventDataBatch);
-
-                    eventDataBatch = await _eventHubProducerClient.CreateBatchAsync();
-
-                    var eventData = new EventData(JsonConvert.SerializeObject(address));
-
-                    if (!eventDataBatch.TryAdd(eventData))
+                    if (!eventDataBatch.TryAdd(new EventData(JsonConvert.SerializeObject(address))))
                     {
-                        throw new Exception("Generated address is too big for Event Hub batch");
+                        await _eventHubProducerClient.SendAsync(eventDataBatch);
+
+                        eventDataBatch = await _eventHubProducerClient.CreateBatchAsync(createBatchOptions);
+
+                        var eventData = new EventData(JsonConvert.SerializeObject(address));
+
+                        if (!eventDataBatch.TryAdd(eventData))
+                        {
+                            throw new Exception("Generated address is too big for Event Hub batch");
+                        }
                     }
                 }
+                
+                await _eventHubProducerClient.SendAsync(eventDataBatch);
+                Log.LogInformation($"Published {addresssBatch.Value.Count} addresses to Partition Key: {createBatchOptions.PartitionKey}");
             }
-
-            await _eventHubProducerClient.SendAsync(eventDataBatch);
-            _log.LogInformation($"Generated batch of {addresses.Count} addresses in {sw.ElapsedMilliseconds}ms");
         }
     }
 }

@@ -4,6 +4,9 @@ namespace CDC.Domain
 {
     public class ConnectWrapper
     {
+        [JsonPropertyName("CustomerId")]
+        public long CustomerId { get; set; }
+
         [JsonPropertyName("schema")]
         public Schema? Schema { get; set; }
 

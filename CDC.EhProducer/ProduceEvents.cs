@@ -1,50 +1,26 @@
-using CDC.Domain;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Net.Http;
-using System.Net.Http.Json;
 using System.Threading.Tasks;
 
 namespace CDC.EhProducer
 {
     public class ProduceEvents
     {
-        private readonly HttpClient _httpClient;
+        private readonly IProducer _producer;
 
-        public ProduceEvents()
+        public ProduceEvents(IProducer producer)
         {
-            _httpClient = new HttpClient
-            {
-                BaseAddress = new Uri(Environment.GetEnvironmentVariable("ExternalApiUri"))
-            };
+            _producer = producer;
         }
 
         [FunctionName("ProduceEvents")]
         public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req, ILogger log)
         {
-            /*
-            var result = await _httpClient.GetAsync(string.Empty);
-
-            if (result.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                throw new Exception($"Call to API Endpoint Failed: {result.StatusCode}");
-            }
-            */
-
-
-            /*
-            var results = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
-            foreach(var result in results)
-            {
-                log.LogInformation($"Weather Result Summary: {result.Summary}");
-            }
-            */
 
             if (!int.TryParse(req.Query["messageCount"], out int messageCount))
             {
@@ -65,15 +41,18 @@ namespace CDC.EhProducer
                 delayMs = 0;
             }
 
+            if (!int.TryParse(req.Query["partitionCount"], out int partitionCount))
+            {
+                partitionCount = 1;
+            }
+
             try
             {
-                var producer = new Producer(log);
-
                 var sw = Stopwatch.StartNew();
                 await CosmosInitializer.Initalize();
-                await producer.PublishMessages(messageCount, cycles, delayMs);
-
-                return new OkObjectResult($"Produced {messageCount} messages in {cycles} cycles in {sw.ElapsedMilliseconds}ms.  With Weather");
+                _producer.Log = log;
+                await _producer.PublishMessages(messageCount, cycles, delayMs, partitionCount);
+                return new OkObjectResult($"Produced {messageCount} messages in {cycles} cycles in {sw.ElapsedMilliseconds}ms.");
             }
             catch (Exception ex)
             {

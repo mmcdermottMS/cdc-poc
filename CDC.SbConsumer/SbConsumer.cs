@@ -50,6 +50,7 @@ namespace CDC.SbConsumer
                 var zipSplit = sourceAddress.ZipCode.Split("-");
                 if (targetAddress == null)
                 {
+                    var createdDateUtc = new DateTime().AddMilliseconds(sourceAddress.CreatedDateUtc.Value);
                     targetAddress = new TargetAddress()
                     {
                         Id = Guid.NewGuid().ToString(),
@@ -60,7 +61,9 @@ namespace CDC.SbConsumer
                         State = sourceAddress.State,
                         Zip = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[0] : sourceAddress.ZipCode,
                         ZipExtension = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[1] : string.Empty,
-                        CreatedDateUtc = new DateTime().AddMilliseconds(sourceAddress.CreatedDateUtc.Value)
+                        CreatedDateUtc = createdDateUtc,
+                        UpdatedDateUtc = createdDateUtc,
+                        LatencyMs = (DateTime.UtcNow - createdDateUtc).TotalMilliseconds
                     };
                 }
                 else
@@ -71,15 +74,15 @@ namespace CDC.SbConsumer
                     targetAddress.State = sourceAddress.State;
                     targetAddress.Zip = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[0] : sourceAddress.ZipCode;
                     targetAddress.ZipExtension = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[1] : string.Empty;
-                    targetAddress.UpdatedDateUtc = sourceAddress.UpdatedDateUtc != null ? new DateTime().AddMilliseconds(sourceAddress.UpdatedDateUtc.Value) : DateTime.UtcNow;
-                    targetAddress.LatencyMs = (DateTime.UtcNow - targetAddress.UpdatedDateUtc).Milliseconds;
+                    targetAddress.UpdatedDateUtc = sourceAddress.UpdatedDateUtc != null ? new DateTime().AddMilliseconds(sourceAddress.UpdatedDateUtc.Value) : new DateTime().AddMilliseconds(sourceAddress.CreatedDateUtc.Value);
+                    targetAddress.LatencyMs = (DateTime.UtcNow - targetAddress.UpdatedDateUtc).TotalMilliseconds;
                 }
 
                 await _cosmosDbService.UpsertTargetAddress(targetAddress);
-                log.LogInformation($"Upserted Address");
+                log.LogInformation($"Upserted Address - Latency in MS: {targetAddress.LatencyMs}");
 
                 //Simulate additional processing time above and beyond the basic ETL being done above
-                Thread.Sleep(_random.Next(250, 750));
+                //Thread.Sleep(_random.Next(250, 750));
 
                 await messageActions.CompleteMessageAsync(message);
 
