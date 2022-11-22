@@ -37,24 +37,6 @@ namespace CDC.EhConsumer
         {
             log.LogInformation($"Received {events.Length} events for partition ID {partitionContext.PartitionId}");
 
-            /*
-            var result = await _httpClient.GetAsync(string.Empty);
-
-            if (result.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                throw new Exception($"Call to API Endpoint Failed: {result.StatusCode}");
-            }
-            */
-
-
-            /*
-            var results = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
-            foreach(var result in results)
-            {
-                log.LogInformation($"Weather Result Summary: {result.Summary}");
-            }
-            */
-
             var exceptions = new List<Exception>();
 
             try
