@@ -25,9 +25,16 @@ param subnets array = [
     serviceEndpoints: []
   }
   {
+    suffix: 'subnet-aks'
+    name: '${resourcePrefix}-subnet-aks'
+    ipAddressRange: '192.168.8.0/22'
+    delegations: []
+    serviceEndpoints: []
+  }
+  {
     suffix: 'subnet-ase'
     name: '${resourcePrefix}-subnet-ase'
-    ipAddressRange: '192.168.8.0/24'
+    ipAddressRange: '192.168.12.0/24'
     delegations: [
       {
         name: '${resourcePrefix}-ase-delegation-${substring(uniqueString(deployment().name), 0, 4)}'
@@ -42,7 +49,7 @@ param subnets array = [
   {
     suffix: 'subnet-epf-01'
     name: '${resourcePrefix}-subnet-epf-01'
-    ipAddressRange: '192.168.10.0/26'
+    ipAddressRange: '192.168.13.0/26'
     delegations: [
       {
         name: '${resourcePrefix}-asp-delegation-${substring(uniqueString(deployment().name), 0, 4)}'
@@ -61,7 +68,7 @@ param subnets array = [
   {
     suffix: 'subnet-epf-02'
     name: '${resourcePrefix}-subnet-epf-02'
-    ipAddressRange: '192.168.10.64/26'
+    ipAddressRange: '192.168.13.64/26'
     delegations: [
       {
         name: '${resourcePrefix}-asp-delegation-${substring(uniqueString(deployment().name), 0, 4)}'
@@ -80,7 +87,7 @@ param subnets array = [
   {
     suffix: 'subnet-epf-03'
     name: '${resourcePrefix}-subnet-epf-03'
-    ipAddressRange: '192.168.10.128/26'
+    ipAddressRange: '192.168.13.128/26'
     delegations: [
       {
         name: '${resourcePrefix}-asp-delegation-${substring(uniqueString(deployment().name), 0, 4)}'
@@ -99,7 +106,7 @@ param subnets array = [
   {
     suffix: 'subnet-as-01'
     name: '${resourcePrefix}-subnet-as-01'
-    ipAddressRange: '192.168.10.192/26'
+    ipAddressRange: '192.168.13.192/26'
     delegations: [
       {
         name: '${resourcePrefix}-asp-delegation-${substring(uniqueString(deployment().name), 0, 4)}'
@@ -146,6 +153,8 @@ resource virtualNetworks 'Microsoft.Network/virtualNetworks@2020-11-01' = {
     networkSecurityGroups
   ]
 }
+
+output aksSubnetId string = resourceId('Microsoft.Network/VirtualNetworks/subnets', virtualNetworks.name, '${resourcePrefix}-subnet-aks')
 
 output aseSubnets array = [
   resourceId('Microsoft.Network/VirtualNetworks/subnets', virtualNetworks.name, '${resourcePrefix}-subnet-ase')

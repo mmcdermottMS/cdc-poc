@@ -8,8 +8,8 @@ param zoneRedundant bool
 param functionSubnetId string
 param dockerImageAndTag string
 
-//TODO - refactor this out into the main.bicep file, and refactor the storage conn strings into KV instead of
-//being passed around as a module output (which is not secure)
+// TODO: Design for networking limits.  Example, DNS zones
+
 module storage 'storage.bicep' = {
   name: '${timeStamp}-${resourcePrefix}-${functionAppNameSuffix}-storage'
   params: {
@@ -20,19 +20,16 @@ module storage 'storage.bicep' = {
   }
 }
 
-resource fxAppServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
-  name: '${resourcePrefix}-asp-${functionAppNameSuffix}'
-  kind: 'linux'
-  location: location
-  properties: {
+module asp 'appServicePlan.bicep' = {
+  name: '${timeStamp}-${resourcePrefix}-${functionAppNameSuffix}-asp'
+  params: {
+    location: location
+    resourcePrefix: resourcePrefix
+    appNameSuffix: functionAppNameSuffix
+    serverOS: 'Linux'
     zoneRedundant: zoneRedundant
-    reserved: true
-    maximumElasticWorkerCount: 20
-  }
-  sku: {
-    name: 'EP1'
-    tier: 'ElasticPremium'
-    capacity: zoneRedundant ? 3 : 1
+    skuName: 'EP1'
+    skuTier: 'ElasticPremium'
   }
 }
 
@@ -41,7 +38,7 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
   location: location
   kind: 'functionapp,linux,container'
   properties: {
-    serverFarmId: fxAppServicePlan.id
+    serverFarmId: asp.outputs.resourceId
     httpsOnly: true
     virtualNetworkSubnetId: functionSubnetId
     siteConfig: {

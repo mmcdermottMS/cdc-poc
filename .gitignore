@@ -354,3 +354,4 @@ local.settings.json
 CDC.KafkaConnect/connect-distributed.properties
 CDC.KafkaConnect/mongo-connect-config.json
 /CDC.GenericMicroserviceAPI/Properties/ServiceDependencies/oms-perf-wus3-as-weather - Zip Deploy/profile.arm.json
+/CDC.GenericMicroserviceAPI/Properties/ServiceDependencies/oms-perf-cus-as-weather - Zip Deploy

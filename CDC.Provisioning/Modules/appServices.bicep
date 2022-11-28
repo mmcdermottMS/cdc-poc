@@ -1,22 +1,19 @@
 param location string
 param resourcePrefix string
 param appServiceNameSuffix string
+param timeStamp string
 param zoneRedundant bool
-param appServiceSubnetId string
-param dockerImageAndTag string
 
-resource asAppServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
-  name: '${resourcePrefix}-asp-${appServiceNameSuffix}'
-  kind: 'app'
-  location: location
-  properties: {
+module asp 'appServicePlan.bicep' = {
+  name: '${timeStamp}-${resourcePrefix}-asp-${appServiceNameSuffix}'
+  params: {
+    location: location
+    resourcePrefix: resourcePrefix
+    appNameSuffix: appServiceNameSuffix
+    serverOS: 'Linux'
     zoneRedundant: zoneRedundant
-    reserved: true
-  }
-  sku: {
-    name: 'S1'
-    tier: 'Standard'
-    capacity: zoneRedundant ? 3 : 1
+    skuName: zoneRedundant ? 'P1v2' : 'S1'
+    skuTier: zoneRedundant ? 'PremiumV2' : 'Standard'
   }
 }
 
@@ -25,7 +22,7 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
   location: location
   kind: 'app'
   properties: {
-    serverFarmId: asAppServicePlan.id
+    serverFarmId: asp.outputs.resourceId
     httpsOnly: true
   }
 }

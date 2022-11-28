@@ -1,0 +1,32 @@
+# https://learn.microsoft.com/en-us/azure/aks/tutorial-kubernetes-deploy-application?tabs=azure-cli
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cdcgenericmicroserviceapi-deployment
+  labels:
+    app: cdcgenericmicroserviceapi-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cdcgenericmicroserviceapi
+  template:
+    metadata:
+      labels:
+        app: cdcgenericmicroserviceapi
+    spec:
+      containers:
+      - name: cdcgenericmicroserviceapi
+        image: islandvnetwus3acr.azurecr.io/cdcgenericmicroserviceapi:latest
+        ports:
+        - containerPort: 80
+apiVersion: v1
+kind: Service
+metadata:
+  name: cdcgenericmicroserviceapi
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: cdcgenericmicroserviceapi

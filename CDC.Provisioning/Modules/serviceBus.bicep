@@ -7,7 +7,7 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2021-11-01' = {
   name: '${resourcePrefix}-sbns'
   location: location
   sku: {
-    name: 'Premium'
+    name: zoneRedundant ? 'Premium' : 'Standard'
     capacity: 1
   }
   properties: {
@@ -22,7 +22,7 @@ resource queues 'Microsoft.ServiceBus/namespaces/queues@2021-11-01' = [for queue
     requiresSession: true
     maxMessageSizeInKilobytes: 1024
     maxSizeInMegabytes: 10240
-    maxDeliveryCount: 2000
+    maxDeliveryCount: 10
   }
 }]
 

@@ -5,7 +5,8 @@ param functionAppNameSuffix string
 
 var resourcePrefix = '${appName}-${regionCode}'
 var storageResourcePrefix = format('{0}sa', replace(resourcePrefix, '-', ''))
-var storageAccountName = substring('${storageResourcePrefix}${storageAccountNameSuffix}', 0, 24)
+var storageAccountName = '${storageResourcePrefix}${storageAccountNameSuffix}'
+var finalStorageAccountName = length(storageAccountName) > 24 ?substring('${storageResourcePrefix}${storageAccountNameSuffix}', 0, 24) : storageAccountName
 var functionAppName = '${resourcePrefix}-${functionAppNameSuffix}'
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {
@@ -13,7 +14,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {
 }
 
 resource storage 'Microsoft.Storage/storageAccounts@2021-09-01' existing = {
-  name: storageAccountName
+  name: finalStorageAccountName
 }
 
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2021-09-01' existing = {
@@ -102,7 +103,11 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' existing = {
           value: 'https://${resourcePrefix}-acdb.documents.azure.com:443/'
         }
         {
-          name: 'BaseWeatherUri'
+          name: 'CosmosAuthToken'
+          value: ''
+        }
+        {
+          name: 'ExternalApiUri'
           value: 'https://${resourcePrefix}-as-weather.azurewebsites.net/'
         }
       ]

@@ -32,8 +32,14 @@ $timeStamp = Get-Date -Format "yyyyMMddHHmm"
 DecoratedOutput "Beginning Deployment..."
 
 switch ($targetRegion) {
+    'cus' {
+        $location = 'Central US'
+    }
     'eus' {
         $location = 'East US'
+    }
+    'eus2' {
+        $location = 'East US 2'
     }
     'wus' {
         $location = 'West US'
@@ -109,7 +115,8 @@ $webApps = @(
 $serviceBusName = "$appName-$targetRegion-sbns"
 $eventHubName = "$appName-$targetRegion-ehns"
 $cosmosAccountName = "$appName-$targetRegion-acdb"
-$containerRegistryName = $appName.ToString().ToLower().Replace("-", "") + "$targetRegion" + "cr"
+$aksName = "$appName-$targetRegion-aks"
+$containerRegistryName = $appName.ToString().ToLower().Replace("-", "") + "$targetRegion" + "acr"
 $kvName = "$appName-$targetRegion-kv"
 $acrPullIdentityName = "$appName-$targetRegion-mi-acrPull"
 $kvSecretsUserIdentityName = "$appName-$targetRegion-mi-kvSecrets"
@@ -142,6 +149,10 @@ $keyVaultSecretsRoleId = (az role definition list --name "Key Vault Secrets User
 DecoratedOutput "Got Key Vault Secrets User Role Id:" $keyVaultSecretsRoleId
 $kvSecretRoleAssignment_output = (az role assignment create --assignee $kvSecretsPrincipalId --role $keyVaultSecretsRoleId --scope "/subscriptions/$subscriptionId/resourcegroups/$targetResourceGroup/providers/Microsoft.KeyVault/vaults/$kvName" --output tsv)
 DecoratedOutput "Completed role assignment of Key Vault Secrets User to User Identity"
+
+# Wire up ACR to AKS
+$aksUpdate_output = az aks update -n $aksName -g $targetResourceGroup --attach-acr $containerRegistryName
+DecoratedOutput "Wired up AKS to ACR"
 
 if ([string]::IsNullOrWhiteSpace($principalId) -ne $true) {
     $cosmosRoleAssignment_output = (az cosmosdb sql role assignment create --account-name $cosmosAccountName --resource-group $targetResourceGroup --scope "/" --principal-id $principalId --role-definition-id $cosmosRoleId)
@@ -180,17 +191,13 @@ $functionApps | ForEach-Object {
         DecoratedOutput "Completed role assignment of $functionAppNameSuffix to" $storageAccountName
     }
 
-    # Assign function app's system identity to the service bus data sender role
-    $serviceBusDataSenderRoleId = (az role definition list --name "Azure Service Bus Data Sender" --query [0].id --output tsv)
+    # Assign function app's system identity to the service bus data owner role
+    # The owner role needs to be assigned to the listener (instead of the receiver role) so that it can peek into the queue 
+    # length for making scaling decisions
+    $serviceBusDataSenderRoleId = (az role definition list --name "Azure Service Bus Data Owner" --query [0].id --output tsv)
     DecoratedOutput "Got Service Bus Data Sender Role Id:" $serviceBusDataSenderRoleId
     $serviceBusRoleAssignment_output = az role assignment create --assignee $functionAppIdentityId --role $serviceBusDataSenderRoleId --scope "/subscriptions/$subscriptionId/resourcegroups/$targetResourceGroup/providers/Microsoft.ServiceBus/namespaces/$serviceBusName"
     DecoratedOutput "Completed sender role assignment of $functionAppNameSuffix to" $serviceBusName
-
-    # Assign function app's system identity to the service bus data receiver role
-    $serviceBusDataReceiverRoleId = (az role definition list --name "Azure Service Bus Data Receiver" --query [0].id --output tsv)
-    DecoratedOutput "Got Service Bus Data Receiver Role Id:" $serviceBusDataReceiverRoleId
-    $serviceBusRecieverRoleAssignment_output = az role assignment create --assignee $functionAppIdentityId --role $serviceBusDataReceiverRoleId --scope "/subscriptions/$subscriptionId/resourcegroups/$targetResourceGroup/providers/Microsoft.ServiceBus/namespaces/$serviceBusName"
-    DecoratedOutput "Completed receiver role assignment of $functionAppNameSuffix to" $serviceBusName
 
     # Assign function app's system identity to the event hub data sender role
     $eventHubDataSenderRoleId = (az role definition list --name "Azure Event Hubs Data Sender" --query [0].id --output tsv)

@@ -8,9 +8,11 @@ resource eventHubNameSpace 'Microsoft.EventHub/namespaces@2021-11-01' = {
   location: location
   properties: {
     zoneRedundant: zoneRedundant
+    isAutoInflateEnabled: true
+    maximumThroughputUnits: 20
   }
   sku: {
-    name: 'Premium'
+    name: 'Standard'
     capacity: 1
   }
 }
@@ -19,7 +21,7 @@ resource eventHubs 'Microsoft.EventHub/namespaces/eventhubs@2021-11-01' = [for e
   name: eventHubName
   parent: eventHubNameSpace
   properties: {
-    partitionCount: 1
+    partitionCount: 10
   }
 }]
 

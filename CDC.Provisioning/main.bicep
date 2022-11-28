@@ -37,20 +37,29 @@ var entities = [
   'poc.customers.addresses'
 ]
 
+module vnet 'Modules/vnet.bicep' = {
+  name: '${timeStamp}-${resourcePrefix}-vnet'
+  params: {
+    location: location
+    resourcePrefix: resourcePrefix
+  }
+}
+
+module aks 'Modules/aks.bicep' = {
+  name: '${timeStamp}-${resourcePrefix}-aks'
+  params: {
+    location: location
+    resourcePrefix: resourcePrefix
+    subnetId: vnet.outputs.aksSubnetId
+  }
+}
+
 module keyVault 'Modules/keyVault.bicep' = {
   name: '${timeStamp}-${resourcePrefix}-kv'
   params: {
     location: location
     resourcePrefix: resourcePrefix
     tenantId: tenantId
-  }
-}
-
-module vnet 'Modules/vnet.bicep' = {
-  name: '${timeStamp}-${resourcePrefix}-vnet'
-  params: {
-    location: location
-    resourcePrefix: resourcePrefix
   }
 }
 
@@ -126,8 +135,7 @@ module webAppServices 'Modules/appServices.bicep' = [for i in range(0, webAppsCo
     resourcePrefix: resourcePrefix
     appServiceNameSuffix: webApps[i].appServiceNameSuffix
     zoneRedundant: zoneRedundant
-    appServiceSubnetId: vnet.outputs.appServiceSubnets[i]
-    dockerImageAndTag: webApps[i].dockerImageAndTag
+    timeStamp: timeStamp
   }
   dependsOn: [
     vnet
