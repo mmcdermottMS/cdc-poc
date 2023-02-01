@@ -20,7 +20,7 @@ namespace CDC.EhProducer
                 PartitionKeyPath = "/profileId"
             };
 
-            var throughputProperties = ThroughputProperties.CreateAutoscaleThroughput(20000);
+            var throughputProperties = ThroughputProperties.CreateAutoscaleThroughput(int.Parse(Environment.GetEnvironmentVariable("CosmosInitialAutoscaleThroughput")));
 
             var container = await databaseResponse.Database.CreateContainerIfNotExistsAsync(containerProperties, throughputProperties);
         }

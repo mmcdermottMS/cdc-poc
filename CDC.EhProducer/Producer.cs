@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,16 +18,20 @@ namespace CDC.EhProducer
     {
         private readonly EventHubProducerClient _eventHubProducerClient;
         private readonly Random random = new(8675309);
+        private readonly HttpClient httpClient = new();
+        private readonly ILogger<Producer> _logger;
 
-        public ILogger Log { get; set; }
-
-        public Producer(EventHubProducerClient eventHubProducerClient)
+        public Producer(EventHubProducerClient eventHubProducerClient, ILogger<Producer> logger)
         {
-            _eventHubProducerClient = eventHubProducerClient;           
+            _eventHubProducerClient = eventHubProducerClient;
+            _logger = logger;
         }
 
         public async Task PublishMessages(int messageCount, int numCycles, int delayMs, int partitionCount)
         {
+            var apiCallResult = await httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
+            _logger.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}");
+
             for (int cycle = 0; cycle < numCycles; cycle++)
             {
                 var sw = Stopwatch.StartNew();
@@ -82,7 +87,7 @@ namespace CDC.EhProducer
                 await SendBatch(addresses, partitionCount);
 
                 Thread.Sleep(delayMs);
-                Log.LogInformation($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {messageCount} address change messages.");
+                _logger.LogInformation($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {messageCount} address change messages.");
             }
         }
 
@@ -100,13 +105,12 @@ namespace CDC.EhProducer
 
                 foreach(var address in addresssBatch.Value)
                 {
-                    if (!eventDataBatch.TryAdd(new EventData(JsonConvert.SerializeObject(address))))
+                    var eventData = new EventData(JsonConvert.SerializeObject(address));
+                    if (!eventDataBatch.TryAdd(eventData))
                     {
                         await _eventHubProducerClient.SendAsync(eventDataBatch);
 
                         eventDataBatch = await _eventHubProducerClient.CreateBatchAsync(createBatchOptions);
-
-                        var eventData = new EventData(JsonConvert.SerializeObject(address));
 
                         if (!eventDataBatch.TryAdd(eventData))
                         {
@@ -116,8 +120,10 @@ namespace CDC.EhProducer
                 }
                 
                 await _eventHubProducerClient.SendAsync(eventDataBatch);
-                Log.LogInformation($"Published {addresssBatch.Value.Count} addresses to Partition Key: {createBatchOptions.PartitionKey}");
+                _logger.LogInformation($"Published {addresssBatch.Value.Count} addresses to Partition Key: {createBatchOptions.PartitionKey}");
             }
+
+            _logger.LogInformation($"Published {addresses.Count} addresses in {sw.ElapsedMilliseconds}ms");
         }
     }
 }

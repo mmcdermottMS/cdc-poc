@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
@@ -38,12 +39,21 @@ namespace CDC.SbConsumer
             ILogger log)
         {
 
-            var result = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
+            /*
+            var results = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
+            foreach (var result in results)
+            {
+                log.LogInformation($"Weather Result Summary: {result.Summary}");
+            }
+            */
+
+            //var apiCallResult = await _httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
+            //log.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}");
 
             try
             {
-                log.LogInformation($"Processed Profile ID: {message.SessionId}");
-
+                var sw = Stopwatch.StartNew();
+                
                 var sourceAddress = JsonConvert.DeserializeObject<MongoAddress>(JsonConvert.DeserializeObject<ConnectWrapper>(message.Body.ToString()).Payload);
                 var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId.Value);
 
@@ -93,8 +103,7 @@ namespace CDC.SbConsumer
                 }
                 */
 
-                var totalProcessingTime = (DateTime.UtcNow - targetAddress.CreatedDateUtc).Duration().TotalMilliseconds;
-                log.LogInformation($"Total processing time: {totalProcessingTime}");
+                log.LogInformation($"Processed Profile ID: {message.SessionId} in {sw.ElapsedMilliseconds}ms");
             }
             //TODO: https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-exceptions
             //TODO: Optimize these calls to elminate the repeated code

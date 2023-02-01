@@ -19,7 +19,7 @@ namespace CDC.EhProducer
         }
 
         [FunctionName("ProduceEvents")]
-        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req, ILogger log)
+        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, ILogger log)
         {
 
             if (!int.TryParse(req.Query["messageCount"], out int messageCount))
@@ -50,13 +50,14 @@ namespace CDC.EhProducer
             {
                 var sw = Stopwatch.StartNew();
                 await CosmosInitializer.Initalize();
-                _producer.Log = log;
                 await _producer.PublishMessages(messageCount, cycles, delayMs, partitionCount);
-                return new OkObjectResult($"Produced {messageCount} messages in {cycles} cycles in {sw.ElapsedMilliseconds}ms.");
+                var resultStatement = $"Produced {messageCount * cycles} total messages in batches of {messageCount} across {cycles} cycles in {sw.ElapsedMilliseconds}ms.";
+                log.LogInformation(resultStatement);
+                return new OkObjectResult(resultStatement);
             }
             catch (Exception ex)
             {
-                return new OkObjectResult(ex.Message);
+                return new OkObjectResult($"Error Message: {ex.Message}; Stack Trace: {ex.StackTrace}");
             }
         }
     }

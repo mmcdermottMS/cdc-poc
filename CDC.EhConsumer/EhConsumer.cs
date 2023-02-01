@@ -26,10 +26,7 @@ namespace CDC.EhConsumer
         {
             _serviceBusClient = new(Environment.GetEnvironmentVariable("ServiceBusHostName"), new DefaultAzureCredential());
             _serviceBusSender = _serviceBusClient.CreateSender(Environment.GetEnvironmentVariable("QueueName"));
-            _httpClient = new HttpClient
-            {
-                BaseAddress = new Uri(Environment.GetEnvironmentVariable("ExternalApiUri"))
-            };
+            _httpClient = new HttpClient();
         }
 
         [FunctionName("EhConsumer")]
@@ -46,11 +43,17 @@ namespace CDC.EhConsumer
                 var messageBatch = await _serviceBusSender.CreateMessageBatchAsync();
                 foreach (EventData eventData in events)
                 {
+                    /*For use if the included Generic Microserviecs API project is deployed
                     var results = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
                     foreach (var result in results)
                     {
                         log.LogInformation($"Weather Result Summary: {result.Summary}");
                     }
+                    */
+
+                    //For use if you just want to call any general HTTP endpoint to test network connectivity
+                    var apiCallResult = await _httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
+                    log.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}");
 
                     var eventBody = eventData.EventBody.ToString();
                     var connectWrapper = JsonConvert.DeserializeObject<ConnectWrapper>(eventBody);
