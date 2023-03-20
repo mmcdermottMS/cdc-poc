@@ -7,6 +7,8 @@ namespace CDC.GenericMicroserviceAPI.Controllers
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
+        private readonly HttpClient _httpClient;
+        private readonly IConfiguration _configuration;
         private static readonly string[] Summaries = new[]
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
@@ -15,14 +17,29 @@ namespace CDC.GenericMicroserviceAPI.Controllers
         private readonly ILogger<WeatherForecastController> _logger;
         private readonly Random _random = new Random();
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, IConfiguration configuration)
         {
             _logger = logger;
+            _httpClient = new HttpClient();
+            _configuration = configuration;
         }
 
         [HttpGet(Name = "GetWeatherForecast")]
-        public IEnumerable<WeatherForecast> Get()
+        public async Task<IEnumerable<WeatherForecast>> Get()
         {
+            //var apiCallResult = await _httpClient.GetAsync(_configuration["ExternalApiUri"]);
+
+            try 
+            {
+                var apiCallResult = await _httpClient.GetAsync("http://api.contoso.com");
+                _logger.LogInformation($"Successfully made API call to http://api.contoso.com");
+            }
+            catch (Exception ex)
+            {
+                return new List<WeatherForecast>() { new WeatherForecast() { Summary = ex.Message } };
+            }
+            
+
             _logger.LogInformation("Sent some weather details");
 
             /*
