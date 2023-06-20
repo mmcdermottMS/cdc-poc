@@ -52,8 +52,8 @@ namespace CDC.EhConsumer
                     */
 
                     //For use if you just want to call any general HTTP endpoint to test network connectivity
-                    var apiCallResult = await _httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
-                    log.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}");
+                    //var apiCallResult = await _httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
+                    //log.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}");
 
                     var eventBody = eventData.EventBody.ToString();
                     var connectWrapper = JsonConvert.DeserializeObject<ConnectWrapper>(eventBody);

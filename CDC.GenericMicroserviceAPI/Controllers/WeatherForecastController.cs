@@ -1,4 +1,4 @@
-using CDC.Domain;
+/*using CDC.Domain;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CDC.GenericMicroserviceAPI.Controllers
@@ -15,7 +15,7 @@ namespace CDC.GenericMicroserviceAPI.Controllers
         };
 
         private readonly ILogger<WeatherForecastController> _logger;
-        private readonly Random _random = new Random();
+        private readonly Random _random = new();
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger, IConfiguration configuration)
         {
@@ -27,33 +27,32 @@ namespace CDC.GenericMicroserviceAPI.Controllers
         [HttpGet(Name = "GetWeatherForecast")]
         public async Task<IEnumerable<WeatherForecast>> Get()
         {
-            //var apiCallResult = await _httpClient.GetAsync(_configuration["ExternalApiUri"]);
-
             try 
             {
-                var apiCallResult = await _httpClient.GetAsync("http://api.contoso.com");
+                //var apiCallResult = await _httpClient.GetAsync(_configuration["ExternalApiUri"]);
+                //var apiCallResult = await _httpClient.GetAsync("http://api.contoso.com");
                 _logger.LogInformation($"Successfully made API call to http://api.contoso.com");
             }
             catch (Exception ex)
             {
                 return new List<WeatherForecast>() { new WeatherForecast() { Summary = ex.Message } };
-            }
-            
+            }            
 
             _logger.LogInformation("Sent some weather details");
 
-            /*
             if (DateTime.UtcNow.Millisecond.ToString().EndsWith("7"))
             {
                 throw new Exception("Random Exception from Weather Service");
             }
-            */
 
             //Fake syncrhonous processing delay between 100 and 200 ms
             Thread.Sleep(_random.Next(100, 200));
 
+            var region = _configuration["Region"] ?? "Unknown";
+
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
+                Region = region,
                 Date = DateTime.Now.AddDays(index),
                 TemperatureC = Random.Shared.Next(-20, 55),
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
@@ -62,3 +61,4 @@ namespace CDC.GenericMicroserviceAPI.Controllers
         }
     }
 }
+*/

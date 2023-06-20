@@ -2,7 +2,10 @@
   "profiles": {
     "CDC.SbConsumer": {
       "commandName": "Project",
-      "commandLineArgs": "--port 7021"
+      "commandLineArgs": "--port 7021",
+      "environmentVariables": {
+        "AZURE_TENANT_ID": "16b3c013-d300-468d-ac64-7eda0820b6d3"
+      }
     },
     "Docker": {
       "commandName": "Docker",

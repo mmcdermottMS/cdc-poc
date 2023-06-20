@@ -19,7 +19,7 @@ namespace CDC.EhProducer
         }
 
         [FunctionName("ProduceEvents")]
-        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, ILogger log)
+        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req, ILogger log)
         {
 
             if (!int.TryParse(req.Query["messageCount"], out int messageCount))

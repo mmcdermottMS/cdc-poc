@@ -29,8 +29,8 @@ namespace CDC.EhProducer
 
         public async Task PublishMessages(int messageCount, int numCycles, int delayMs, int partitionCount)
         {
-            var apiCallResult = await httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
-            _logger.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}");
+           // var apiCallResult = await httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
+            //_logger.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}");
 
             for (int cycle = 0; cycle < numCycles; cycle++)
             {

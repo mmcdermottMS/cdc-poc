@@ -2,6 +2,8 @@ namespace CDC.Domain
 {
     public class WeatherForecast
     {
+        public string? Region { get; set; }
+
         public DateTime Date { get; set; }
 
         public int TemperatureC { get; set; }
