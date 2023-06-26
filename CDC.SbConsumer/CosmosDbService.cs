@@ -24,18 +24,18 @@ namespace CDC.SbConsumer
             _logger = logger;
         }
 
-        public async Task<TargetAddress> GetTargetAddressByProfileIdAsync(string profileId)
+        public async Task<Address> GetTargetAddressByProfileIdAsync(string profileId)
         {
-            TargetAddress result = null;
+            Address result = null;
             var query = new QueryDefinition(query: "SELECT * FROM addresses a WHERE a.profileId = @key").WithParameter("@key", profileId);
 
             try
             {
-                using FeedIterator<TargetAddress> feed = _container.GetItemQueryIterator<TargetAddress>(queryDefinition: query);
+                using FeedIterator<Address> feed = _container.GetItemQueryIterator<Address>(queryDefinition: query);
 
                 while (feed.HasMoreResults)
                 {
-                    FeedResponse<TargetAddress> response = await feed.ReadNextAsync();
+                    FeedResponse<Address> response = await feed.ReadNextAsync();
                     if (response != null && response.Count > 0)
                     {
                         result = response.First();
@@ -51,10 +51,10 @@ namespace CDC.SbConsumer
             return result;
         }
 
-        public async Task UpsertTargetAddress(TargetAddress targetAddress)
+        public async Task UpsertTargetAddress(Address targetAddress)
         {
-            var partitionKey = new PartitionKey(targetAddress.ProfileId);
-            await _container.UpsertItemAsync<TargetAddress>(item: targetAddress, partitionKey: partitionKey);
+            var partitionKey = new PartitionKey(targetAddress.ProfileId.ToString());
+            await _container.UpsertItemAsync<Address>(item: targetAddress, partitionKey: partitionKey);
         }
     }
 }

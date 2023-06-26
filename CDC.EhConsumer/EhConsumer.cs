@@ -56,16 +56,15 @@ namespace CDC.EhConsumer
                     //log.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}");
 
                     var eventBody = eventData.EventBody.ToString();
-                    var connectWrapper = JsonConvert.DeserializeObject<ConnectWrapper>(eventBody);
 
                     //TODO: Deserialize against Azure Schema Registry Here
-                    var mongoAddress = JsonConvert.DeserializeObject<MongoAddress>(connectWrapper.Payload);
+                    var address = JsonConvert.DeserializeObject<Address>(eventBody);
 
-                    var sessionId = mongoAddress.ProfileId.Value;
+                    var profileId = address.ProfileId;
 
-                    log.LogInformation($"Processed Profile ID: {sessionId}");
+                    log.LogInformation($"Processed Profile ID: {profileId}");
 
-                    var message = new ServiceBusMessage(eventBody) { SessionId = sessionId };
+                    var message = new ServiceBusMessage(eventBody) { SessionId = profileId.ToString() };
 
                     if (!messageBatch.TryAddMessage(message))
                     {

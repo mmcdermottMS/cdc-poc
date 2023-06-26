@@ -54,40 +54,26 @@ namespace CDC.SbConsumer
             {
                 var sw = Stopwatch.StartNew();
                 
-                var sourceAddress = JsonConvert.DeserializeObject<MongoAddress>(JsonConvert.DeserializeObject<ConnectWrapper>(message.Body.ToString()).Payload);
-                var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId.Value);
+                var sourceAddress = JsonConvert.DeserializeObject<Address>(message.Body.ToString());
+                var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId);
 
-                var zipSplit = sourceAddress.ZipCode.Split("-");
                 if (targetAddress == null)
                 {
-                    var createdDateUtc = new DateTime().AddMilliseconds(sourceAddress.CreatedDateUtc.Value);
-                    targetAddress = new TargetAddress()
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        ProfileId = sourceAddress.ProfileId.Value,
-                        Street1 = sourceAddress.Street1,
-                        Street2 = $"{sourceAddress.Street2} - {sourceAddress.Street3}",
-                        City = sourceAddress.City,
-                        State = sourceAddress.State,
-                        Zip = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[0] : sourceAddress.ZipCode,
-                        ZipExtension = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[1] : string.Empty,
-                        CreatedDateUtc = createdDateUtc,
-                        UpdatedDateUtc = createdDateUtc,
-                        LatencyMs = (DateTime.UtcNow - createdDateUtc).TotalMilliseconds
-                    };
+                    targetAddress = sourceAddress;
                 }
                 else
                 {
                     targetAddress.Street1 = sourceAddress.Street1;
-                    targetAddress.Street2 = $"{sourceAddress.Street2} - {sourceAddress.Street3}";
+                    targetAddress.Street2 = sourceAddress.Street2;
                     targetAddress.City = sourceAddress.City;
                     targetAddress.State = sourceAddress.State;
-                    targetAddress.Zip = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[0] : sourceAddress.ZipCode;
-                    targetAddress.ZipExtension = zipSplit.Length > 1 ? sourceAddress.ZipCode.Split("-")[1] : string.Empty;
-                    targetAddress.UpdatedDateUtc = sourceAddress.UpdatedDateUtc != null ? new DateTime().AddMilliseconds(sourceAddress.UpdatedDateUtc.Value) : new DateTime().AddMilliseconds(sourceAddress.CreatedDateUtc.Value);
+                    targetAddress.Zip = sourceAddress.Zip;
+                    targetAddress.ZipExtension = sourceAddress.ZipExtension;
+                    //targetAddress.UpdatedDateUtc = sourceAddress.UpdatedDateUtc != null ? new DateTime().AddMilliseconds(sourceAddress.UpdatedDateUtc) : new DateTime().AddMilliseconds(sourceAddress.CreatedDateUtc);
                     targetAddress.LatencyMs = (DateTime.UtcNow - targetAddress.UpdatedDateUtc).TotalMilliseconds;
                 }
 
+                targetAddress.Id = targetAddress.ProfileId;
                 await _cosmosDbService.UpsertTargetAddress(targetAddress);
                 log.LogInformation($"Upserted Address - Latency in MS: {targetAddress.LatencyMs}");
 

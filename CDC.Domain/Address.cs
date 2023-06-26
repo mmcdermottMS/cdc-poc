@@ -2,7 +2,7 @@
 
 namespace CDC.Domain
 {
-    public class TargetAddress
+    public class Address
     {
         [JsonProperty("id")]
         public string? Id { get; set; }

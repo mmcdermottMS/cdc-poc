@@ -24,7 +24,7 @@ namespace CDC.CLI.Mongo
 
                 MongoClient mongoClient = new(configurationRoot["mongoDbConnString"]);
                 var database = mongoClient.GetDatabase("Customers");
-                var collection = database.GetCollection<SourceAddress>("addresses");
+                var collection = database.GetCollection<CDC.Domain.Address>("addresses");
 
                 if (args[2].ToLowerInvariant() == "insert" )
                 {
@@ -47,34 +47,34 @@ namespace CDC.CLI.Mongo
             }
         }
 
-        static async Task InsertRecords(int count, IMongoCollection<SourceAddress> collection)
+        static async Task InsertRecords(int count, IMongoCollection<CDC.Domain.Address> collection)
         {
             var addresses = GenerateAddresses(count);
             await collection.InsertManyAsync(addresses);
             Console.WriteLine($"Inserted {addresses.Count} addresses");
         }
 
-        static async Task UpdateRecords(int count, IMongoCollection<SourceAddress> collection)
+        static async Task UpdateRecords(int count, IMongoCollection<CDC.Domain.Address> collection)
         {
             var newStreet3 = Guid.NewGuid().ToString();
-            var filter = Builders<SourceAddress>.Filter.Lt("ProfileId", count.ToString());
-            var update = Builders<SourceAddress>.Update.Set("Street3", newStreet3);
+            var filter = Builders<CDC.Domain.Address>.Filter.Lt("ProfileId", count.ToString());
+            var update = Builders<CDC.Domain.Address>.Update.Set("Street3", newStreet3);
 
             await collection.UpdateManyAsync(filter, update);
 
             Console.WriteLine($"Updated count addresses");
         }
 
-        static List<SourceAddress> GenerateAddresses(int messageCount)
+        static List<CDC.Domain.Address> GenerateAddresses(int messageCount)
         {
             Random random = new();
-            var addresses = new List<SourceAddress>();
+            var addresses = new List<CDC.Domain.Address>();
 
             var sw = Stopwatch.StartNew();
             Randomizer.Seed = random;
 
             //See: https://github.com/bchavez/Bogus
-            var addressGenerator = new Faker<SourceAddress>()
+            var addressGenerator = new Faker<CDC.Domain.Address>()
                 .StrictMode(false)
                 .Rules((f, a) =>
                 {
@@ -82,11 +82,13 @@ namespace CDC.CLI.Mongo
                     a.Street2 = f.Address.SecondaryAddress();
                     a.City = f.Address.City();
                     a.State = f.Address.StateAbbr();
-                    a.ZipCode = $"{f.Address.ZipCode()}-{f.Random.Number(1000, 9999)}";
+                    a.Zip = f.Address.ZipCode();
+                    a.ZipExtension = f.Random.Number(1000, 9999).ToString();
                     a.CreatedDateUtc = DateTime.UtcNow;
                     a.UpdatedDateUtc = DateTime.UtcNow;
                 });
 
+            /*
             for (int profileId = 1; profileId <= messageCount; profileId++)
             {
                 var address = addressGenerator.Generate();
@@ -94,6 +96,7 @@ namespace CDC.CLI.Mongo
                 address.Street3 = "1";
                 addresses.Add(address);
             }
+            */
 
             return addresses;
         }

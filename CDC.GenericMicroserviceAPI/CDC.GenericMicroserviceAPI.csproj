@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>d577ae46-2060-45d1-b7a4-5f96d187387c</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <ApplicationInsightsResourceId>/subscriptions/7029af60-98ff-4083-96c0-695eba78c91b/resourceGroups/dist-trace-wus3-rg/providers/microsoft.insights/components/dist-trace-wus3-ai</ApplicationInsightsResourceId>
+    <ApplicationInsightsResourceId>/subscriptions/7029af60-98ff-4083-96c0-695eba78c91b/resourceGroups/msft-fdptest-eus-rg/providers/microsoft.insights/components/msft-fdptest-eus-ai</ApplicationInsightsResourceId>
   </PropertyGroup>
 
   <ItemGroup>

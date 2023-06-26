@@ -20,20 +20,15 @@ namespace CDC.CLI.EhProducer
 
         public async Task PublishMessages(int messageCount, int numCycles, int delayMs)
         {
-            if (messageCount < 5)
-            {
-                messageCount = 5;
-            }
-
             for (int cycle = 0; cycle < numCycles; cycle++)
             {
                 var sw = Stopwatch.StartNew();
-                Thread.Sleep(delayMs);
                 Randomizer.Seed = random;
-                var addresses = new List<ConnectWrapper>();
+
+                var addresses = new List<Address>();
 
                 //See: https://github.com/bchavez/Bogus
-                var addressGenerator = new Faker<SourceAddress>()
+                var addressGenerator = new Faker<Address>()
                     .StrictMode(false)
                     .Rules((f, a) =>
                     {
@@ -41,55 +36,28 @@ namespace CDC.CLI.EhProducer
                         a.Street2 = f.Address.SecondaryAddress();
                         a.City = f.Address.City();
                         a.State = f.Address.StateAbbr();
-                        a.ZipCode = $"{f.Address.ZipCode()}-{f.Random.Number(1000, 9999)}";
+                        a.Zip = f.Address.ZipCode();
+                        a.ZipExtension = f.Random.Number(1000, 9999).ToString();
                         a.CreatedDateUtc = DateTime.UtcNow;
                         a.UpdatedDateUtc = DateTime.UtcNow;
                     });
 
-                //Set it up so that there are 5 events per profile Id to simulate multiple changes right in a 
-                //row.  Track the change ID in the Street 3 field.  When all is said and done, we'll know we processed
-                //everything in order by verifying that the Street3 field in the target DB is always 5
-                var numProfiles = messageCount / 5;
-                for (int profileId = 1; profileId <= numProfiles; profileId++)
+                for (int i = 0; i < messageCount; i++)
                 {
-                    for (int j = 0; j < 5; j++)
-                    {
-                        var address = addressGenerator.Generate();
-                        address.ProfileId = profileId + (numProfiles * cycle);
-                        address.Street3 = j.ToString();
+                    var address = addressGenerator.Generate();
+                    address.ProfileId = Guid.NewGuid().ToString();
 
-                        var wrapper = new ConnectWrapper
-                        {
-                            Schema = new Schema
-                            {
-                                Optional = false,
-                                Type = "string"
-                            },
-                            Payload = JsonConvert.SerializeObject(new MongoAddress()
-                            {
-                                Id = new MongoAddress.MongoId() { Oid = Guid.NewGuid().ToString() },
-                                ProfileId = new MongoAddress.MongoProfileId() { Value = address.ProfileId.ToString() },
-                                Street1 = address.Street1,
-                                Street2 = address.Street2,
-                                Street3 = address.Street3,
-                                City = address.City,
-                                State = address.State,
-                                ZipCode = address.ZipCode,
-                                CreatedDateUtc = new MongoAddress.MongoDate() { Value = (long)address.CreatedDateUtc.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds }
-                            })
-                        };
-
-                        addresses.Add(wrapper);
-                    }
+                    addresses.Add(address);
                 }
 
                 await SendBatch(addresses);
 
-                Console.WriteLine($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {addresses.Count} address change messages");
+                Thread.Sleep(delayMs);
+                Console.WriteLine($"Cycle {cycle}: {sw.ElapsedMilliseconds}ms to generate and publish {messageCount} address change messages.");
             }
         }
 
-        private async Task SendBatch(List<ConnectWrapper> addresses)
+        private async Task SendBatch(List<Address> addresses)
         {
             var sw = Stopwatch.StartNew();
             var eventDataBatch = await eventHubProducerClient.CreateBatchAsync();
