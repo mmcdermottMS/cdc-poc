@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,25 +16,35 @@ namespace CDC.EhProducer
     public class Producer : IProducer
     {
         private readonly EventHubProducerClient _eventHubProducerClient;
-        private readonly Random random = new(8675309);
-        private readonly HttpClient httpClient = new();
+        private readonly Random _random;
+        private readonly HttpClient _httpClient;
         private readonly ILogger<Producer> _logger;
 
         public Producer(EventHubProducerClient eventHubProducerClient, ILogger<Producer> logger)
         {
             _eventHubProducerClient = eventHubProducerClient;
             _logger = logger;
+            _random = new Random();
+            _httpClient = new HttpClient();
         }
 
         public async Task PublishMessages(int messageCount, int numCycles, int delayMs, int partitionCount)
         {
-            // var apiCallResult = await httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
-            //_logger.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}");
+            if(!int.TryParse(Environment.GetEnvironmentVariable("PROFILE_ID_MAX_RANGE"), out int profileIdMaxRange))
+            {
+                profileIdMaxRange = 50000; //Set a default max range for profile IDs if one isn't configured
+            }
+
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ExternalApiUri")))
+            {
+                var apiCallResult = await _httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
+                _logger.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}: {apiCallResult.Content}");
+            }
 
             for (int cycle = 0; cycle < numCycles; cycle++)
             {
                 var sw = Stopwatch.StartNew();
-                Randomizer.Seed = random;
+                Randomizer.Seed = _random;
 
                 var addresses = new List<Address>();
 
@@ -57,7 +66,8 @@ namespace CDC.EhProducer
                 for (int i = 0; i < messageCount; i++)
                 {
                     var address = addressGenerator.Generate();
-                    address.ProfileId = Guid.NewGuid().ToString();
+                    address.ProfileId = _random.Next(profileIdMaxRange).ToString();
+                    address.Id = Guid.NewGuid().ToString();
 
                     addresses.Add(address);
                 }
@@ -94,42 +104,5 @@ namespace CDC.EhProducer
 
             _logger.LogInformation($"Published {addresses.Count} addresses in {sw.ElapsedMilliseconds}ms");
         }
-
-        /* This has potentially bad partitioning logic
-        private async Task SendBatch(List<ConnectWrapper> addresses, int partitionCount)
-        {
-            var sw = Stopwatch.StartNew();
-
-            //Had trouble with the EventHubBufferedProducerClient so manually partitioning the addresses by customer Id
-            var addressBatches = addresses.GroupBy(_ => _.CustomerId % partitionCount).ToDictionary(y => y.Key, y => y.ToList());
-
-            foreach (var addresssBatch in addressBatches)
-            {
-                var createBatchOptions = new CreateBatchOptions() { PartitionKey = addresssBatch.Key.ToString() };
-                var eventDataBatch = await _eventHubProducerClient.CreateBatchAsync(createBatchOptions);
-
-                foreach(var address in addresssBatch.Value)
-                {
-                    var eventData = new EventData(JsonConvert.SerializeObject(address));
-                    if (!eventDataBatch.TryAdd(eventData))
-                    {
-                        await _eventHubProducerClient.SendAsync(eventDataBatch);
-
-                        eventDataBatch = await _eventHubProducerClient.CreateBatchAsync(createBatchOptions);
-
-                        if (!eventDataBatch.TryAdd(eventData))
-                        {
-                            throw new Exception("Generated address is too big for Event Hub batch");
-                        }
-                    }
-                }
-                
-                await _eventHubProducerClient.SendAsync(eventDataBatch);
-                _logger.LogInformation($"Published {addresssBatch.Value.Count} addresses to Partition Key: {createBatchOptions.PartitionKey}");
-            }
-
-            _logger.LogInformation($"Published {addresses.Count} addresses in {sw.ElapsedMilliseconds}ms");
-        }
-        */
     }
 }

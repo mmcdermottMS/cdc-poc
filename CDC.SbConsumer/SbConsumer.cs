@@ -7,10 +7,8 @@ using Microsoft.Azure.WebJobs.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,10 +24,10 @@ namespace CDC.SbConsumer
         {
             _cosmosDbService = cosmosDbService;
             _random = new Random();
-            //_httpClient = new HttpClient
-            //{
-            //    BaseAddress = new Uri(Environment.GetEnvironmentVariable("ExternalApiUri"))
-            //};
+            _httpClient = new HttpClient
+            {
+                BaseAddress = new Uri(Environment.GetEnvironmentVariable("ExternalApiUri"))
+            };
         }
 
         [FunctionName("SbConsumer")]
@@ -38,22 +36,24 @@ namespace CDC.SbConsumer
             ServiceBusMessageActions messageActions,
             ILogger log)
         {
-
-            /*
-            var results = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
-            foreach (var result in results)
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ExternalApiUri")))
             {
-                log.LogInformation($"Weather Result Summary: {result.Summary}");
-            }
-            */
+                /*
+                var results = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
+                foreach (var result in results)
+                {
+                    log.LogInformation($"Weather Result Summary: {result.Summary}");
+                }
+                */
 
-            //var apiCallResult = await _httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
-            //log.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}");
+                var apiCallResult = await _httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
+                log.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}: {apiCallResult.Content}");
+            }
 
             try
             {
                 var sw = Stopwatch.StartNew();
-                
+
                 var sourceAddress = JsonConvert.DeserializeObject<Address>(message.Body.ToString());
                 var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId);
 
@@ -69,48 +69,55 @@ namespace CDC.SbConsumer
                     targetAddress.State = sourceAddress.State;
                     targetAddress.Zip = sourceAddress.Zip;
                     targetAddress.ZipExtension = sourceAddress.ZipExtension;
-                    //targetAddress.UpdatedDateUtc = sourceAddress.UpdatedDateUtc != null ? new DateTime().AddMilliseconds(sourceAddress.UpdatedDateUtc) : new DateTime().AddMilliseconds(sourceAddress.CreatedDateUtc);
+                    targetAddress.UpdatedDateUtc = sourceAddress.UpdatedDateUtc;
                     targetAddress.LatencyMs = (DateTime.UtcNow - targetAddress.UpdatedDateUtc).TotalMilliseconds;
                 }
 
-                targetAddress.Id = targetAddress.ProfileId;
                 await _cosmosDbService.UpsertTargetAddress(targetAddress);
                 log.LogInformation($"Upserted Address - Latency in MS: {targetAddress.LatencyMs}");
 
                 //Simulate additional processing time above and beyond the basic ETL being done above
-                //Thread.Sleep(_random.Next(250, 750));
+                if (int.TryParse(Environment.GetEnvironmentVariable("ADDITIONAL_SIMULATED_PROC_TIME_MS"), out int simulatedProcessingTime))
+                {
+                    if (simulatedProcessingTime > 0)
+                    {
+                        Thread.Sleep(_random.Next(0, simulatedProcessingTime));
+                    }
+                }
+
+                //Simulate random failures
+                if (int.TryParse(Environment.GetEnvironmentVariable("SIMULATED_FAILURE_RATE"), out int simulatedFailureRate))
+                {
+                    if (simulatedFailureRate > 0 && DateTime.UtcNow.Millisecond < (simulatedFailureRate / 100) * 1000)
+                    {
+                        throw new Exception("Random Exception from SbConsumer");
+                    }
+                }
 
                 await messageActions.CompleteMessageAsync(message);
-
-                /*
-                if (DateTime.UtcNow.Millisecond > 990)
-                {
-                    throw new Exception("Random Exception from SbConsumer");
-                }
-                */
 
                 log.LogInformation($"Processed Profile ID: {message.SessionId} in {sw.ElapsedMilliseconds}ms");
             }
             //TODO: https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-exceptions
-            //TODO: Optimize these calls to elminate the repeated code
             catch (ServiceBusException ex)
             {
-                await messageActions.AbandonMessageAsync(message);
-                log.LogError(ex, $"Service Bus Exception when consuming message from topic {Environment.GetEnvironmentVariable("SubscriberName")} for subscriber {Environment.GetEnvironmentVariable("SubscriberName")}");
-
+                await ExceptionHelper("Service Bus Exception", messageActions, message, ex, log);
             }
             catch (CosmosException ex)
             {
-                await messageActions.AbandonMessageAsync(message);
-                log.LogError(ex, $"Cosmos Exception when consuming message from topic {Environment.GetEnvironmentVariable("SubscriberName")} for subscriber {Environment.GetEnvironmentVariable("SubscriberName")}");
+                await ExceptionHelper("Cosmos Exception", messageActions, message, ex, log);
             }
             catch (Exception ex)
             {
-                await messageActions.AbandonMessageAsync(message);
-                log.LogError(ex, $"Unknown Exception consuming message from topic {Environment.GetEnvironmentVariable("SubscriberName")} for subscriber {Environment.GetEnvironmentVariable("SubscriberName")}");
-
+                await ExceptionHelper("Unknown Exception", messageActions, message, ex, log);
                 throw;
             }
+        }
+
+        private static async Task ExceptionHelper(string exceptionType, ServiceBusMessageActions messageActions, ServiceBusReceivedMessage message, Exception ex, ILogger log)
+        {
+            await messageActions.AbandonMessageAsync(message);
+            log.LogError(ex, $"{exceptionType} when consuming messages from topic {Environment.GetEnvironmentVariable("QueueName")}");
         }
     }
 }
