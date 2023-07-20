@@ -1,4 +1,5 @@
-﻿using Azure.Identity;
+﻿using Azure.Core;
+using Azure.Identity;
 using CDC.Domain;
 using CDC.Domain.Interfaces;
 using Microsoft.Azure.Cosmos;
@@ -18,7 +19,7 @@ namespace CDC.SbConsumer
 
         public CosmosDbService(ILogger<CosmosDbService> logger)
         {
-            _cosmosClient = new CosmosClient(Environment.GetEnvironmentVariable("CosmosHost"), new DefaultAzureCredential());
+            _cosmosClient = new CosmosClient(Environment.GetEnvironmentVariable("CosmosHost"), new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityResourceId = new ResourceIdentifier(Environment.GetEnvironmentVariable("COSMOS_WRITER_MI_RESOURCE_ID")) }));
             _database = _cosmosClient.GetDatabase("Customers");
             _container = _database.GetContainer("addresses");
             _logger = logger;
@@ -39,7 +40,6 @@ namespace CDC.SbConsumer
                     if (response != null && response.Count > 0)
                     {
                         result = response.First();
-                        _logger.LogInformation($"RU Charge for Address Lookup by Profile ID: {response.RequestCharge}");
                     }
                 }
             }

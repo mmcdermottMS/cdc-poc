@@ -1,4 +1,5 @@
-﻿using Azure.Identity;
+﻿using Azure.Core;
+using Azure.Identity;
 using Azure.Messaging.EventHubs.Producer;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
@@ -14,7 +15,7 @@ namespace CDC.EhProducer
         {
             builder.Services.AddSingleton<ITelemetryInitializer, CloudRoleNameTelemetryInitializer>();
             builder.Services.AddSingleton<IProducer, Producer>();
-            builder.Services.AddSingleton(new EventHubProducerClient(Environment.GetEnvironmentVariable("EhNameSpace"), Environment.GetEnvironmentVariable("EhName"), new DefaultAzureCredential()));
+            builder.Services.AddSingleton(new EventHubProducerClient(Environment.GetEnvironmentVariable("EhNameSpace"), Environment.GetEnvironmentVariable("EhName"), new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityResourceId = new ResourceIdentifier(Environment.GetEnvironmentVariable("EHNS_SENDER_MI_RESOURCE_ID")) })));
         }
     }
 }

@@ -24,7 +24,53 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CDC.CLI.EhProducer", "CDC.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CDC.CLI.CosmosGenerator", "CDC.CLI.CosmosGenerator\CDC.CLI.CosmosGenerator.csproj", "{B83FB95D-C1B8-4EE3-931F-BD03AE2723D5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDC.GenericMicroserviceAPI", "CDC.GenericMicroserviceAPI\CDC.GenericMicroserviceAPI.csproj", "{69C94227-6235-4D1D-BC24-E8C017E56CE0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CDC.GenericMicroserviceAPI", "CDC.GenericMicroserviceAPI\CDC.GenericMicroserviceAPI.csproj", "{69C94227-6235-4D1D-BC24-E8C017E56CE0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Deployment", "Deployment", "{86AAF3D4-1A82-4247-8498-2DE731671275}"
+	ProjectSection(SolutionItems) = preProject
+		Deployment\deploy.ps1 = Deployment\deploy.ps1
+		Deployment\main.bicep = Deployment\main.bicep
+		Deployment\main.parameters.json = Deployment\main.parameters.json
+		Deployment\README.md = Deployment\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Components", "Components", "{BB92F6D1-8242-4F92-B978-0C22A4918746}"
+	ProjectSection(SolutionItems) = preProject
+		Deployment\Components\appInsights.bicep = Deployment\Components\appInsights.bicep
+		Deployment\Components\appServicePlan.bicep = Deployment\Components\appServicePlan.bicep
+		Deployment\Components\appServices.bicep = Deployment\Components\appServices.bicep
+		Deployment\Components\containerRegistry.bicep = Deployment\Components\containerRegistry.bicep
+		Deployment\Components\cosmos.bicep = Deployment\Components\cosmos.bicep
+		Deployment\Components\dnsZoneLink.bicep = Deployment\Components\dnsZoneLink.bicep
+		Deployment\Components\dnsZones.bicep = Deployment\Components\dnsZones.bicep
+		Deployment\Components\eventHub.bicep = Deployment\Components\eventHub.bicep
+		Deployment\Components\functionApp.bicep = Deployment\Components\functionApp.bicep
+		Deployment\Components\keyVault.bicep = Deployment\Components\keyVault.bicep
+		Deployment\Components\keyVaultSecret.bicep = Deployment\Components\keyVaultSecret.bicep
+		Deployment\Components\logAnalyticsWorkspace.bicep = Deployment\Components\logAnalyticsWorkspace.bicep
+		Deployment\Components\managedIdentity.bicep = Deployment\Components\managedIdentity.bicep
+		Deployment\Components\nsg.bicep = Deployment\Components\nsg.bicep
+		Deployment\Components\privateDnsZone.bicep = Deployment\Components\privateDnsZone.bicep
+		Deployment\Components\privateEndpoint.bicep = Deployment\Components\privateEndpoint.bicep
+		Deployment\Components\serviceBus.bicep = Deployment\Components\serviceBus.bicep
+		Deployment\Components\storageAccount.bicep = Deployment\Components\storageAccount.bicep
+		Deployment\Components\virtualMachine.bicep = Deployment\Components\virtualMachine.bicep
+		Deployment\Components\virtualNetworkLink.bicep = Deployment\Components\virtualNetworkLink.bicep
+		Deployment\Components\vnet.bicep = Deployment\Components\vnet.bicep
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{7E3D08DF-1103-417F-870D-C14D6E80563F}"
+	ProjectSection(SolutionItems) = preProject
+		Deployment\Modules\containerRegistry.bicep = Deployment\Modules\containerRegistry.bicep
+		Deployment\Modules\cosmos.bicep = Deployment\Modules\cosmos.bicep
+		Deployment\Modules\eventHub.bicep = Deployment\Modules\eventHub.bicep
+		Deployment\Modules\functionApps.bicep = Deployment\Modules\functionApps.bicep
+		Deployment\Modules\keyVault.bicep = Deployment\Modules\keyVault.bicep
+		Deployment\Modules\monitoring.bicep = Deployment\Modules\monitoring.bicep
+		Deployment\Modules\networking.bicep = Deployment\Modules\networking.bicep
+		Deployment\Modules\serviceBus.bicep = Deployment\Modules\serviceBus.bicep
+		Deployment\Modules\storageLockdown.bicep = Deployment\Modules\storageLockdown.bicep
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -67,6 +113,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BB92F6D1-8242-4F92-B978-0C22A4918746} = {86AAF3D4-1A82-4247-8498-2DE731671275}
+		{7E3D08DF-1103-417F-870D-C14D6E80563F} = {86AAF3D4-1A82-4247-8498-2DE731671275}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A30597C0-5A75-48DE-B4AE-B13DA2F5FE0F}

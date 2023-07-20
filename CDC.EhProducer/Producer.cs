@@ -30,7 +30,14 @@ namespace CDC.EhProducer
 
         public async Task PublishMessages(int messageCount, int numCycles, int delayMs, int partitionCount)
         {
-            if(!int.TryParse(Environment.GetEnvironmentVariable("PROFILE_ID_MAX_RANGE"), out int profileIdMaxRange))
+            var faker = new Faker();
+            var paragraphs = faker.Lorem.Paragraphs(5000);
+            if (paragraphs.Length > 819200)
+            {
+                paragraphs = paragraphs[..819200];
+            }
+
+            if (!int.TryParse(Environment.GetEnvironmentVariable("PROFILE_ID_MAX_RANGE"), out int profileIdMaxRange))
             {
                 profileIdMaxRange = 50000; //Set a default max range for profile IDs if one isn't configured
             }
@@ -66,6 +73,15 @@ namespace CDC.EhProducer
                 for (int i = 0; i < messageCount; i++)
                 {
                     var address = addressGenerator.Generate();
+
+                    if(int.TryParse(Environment.GetEnvironmentVariable("OVERSIZE_MESSAGE_RATE"), out int oversizeMessageRate))
+                    {
+                        if(i % oversizeMessageRate == 0)
+                        {
+                            address.Street2 = paragraphs;
+                        }
+                    }
+
                     address.ProfileId = _random.Next(profileIdMaxRange).ToString();
                     address.Id = Guid.NewGuid().ToString();
 

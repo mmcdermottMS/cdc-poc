@@ -1,0 +1,66 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "acrSku": {
+        "value": "Premium"
+      },
+      "sbnsCapacity": {
+        "value": 1
+      },
+      "sbnsSku": {
+        "value": "Premium"
+      },
+      "ehnsCapacity": {
+        "value": 1
+      },
+      "ehnsSku": {
+        "value": "Standard"
+      },
+      "ehMessageRetentionInDays": {
+        "value": 1
+      },
+      "ehPartitionCount": {
+        "value": 32
+      },
+      "functionAppSkuTier": {
+        "value": "ElasticPremium"
+      },
+      "maximumElasticWorkerCount": {
+        "value": 100
+      },
+      "storageSku": {
+        "value": "Standard_LRS"
+      },
+      "vnetAddressPrefix": {
+        "value": "10.0.0.0/16"
+      },
+      "utilSubnetAddressPrefix": {
+        "value": "10.0.0.0/24"
+      },
+      "peSubnetAddressPrefix": {
+        "value": "10.0.1.0/24"
+      },
+      "ehProducerSubnetAddressPrefix": {
+        "value": "10.0.2.0/24"
+      },
+      "ehConsumerSubnetAddressPrefix": {
+        "value": "10.0.3.0/24"
+      },
+      "pyConsumerSubnetAddressPrefix": {
+        "value": "10.0.4.0/24"
+      },
+      "sbConsumerSubnetAddressPrefix": {
+        "value": "10.0.5.0/24"
+      },
+      "tags": {
+        "value": {
+          "project": "CDC-POC",
+          "component": "core"
+        }
+      },
+      "zoneRedundant": {
+        "value": false
+      }
+    }
+  }

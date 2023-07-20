@@ -1,8 +1,10 @@
+using Azure.Core;
 using Azure.Identity;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Consumer;
 using Azure.Messaging.ServiceBus;
 using CDC.Domain;
+using Microsoft.ApplicationInsights;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -11,7 +13,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CDC.EhConsumer
@@ -21,12 +23,16 @@ namespace CDC.EhConsumer
         private readonly ServiceBusClient _serviceBusClient;
         private readonly ServiceBusSender _serviceBusSender;
         private readonly HttpClient _httpClient;
+        private readonly Random _random;
+        private readonly TelemetryClient _telemetryClient;
 
-        public EhConsumer()
+        public EhConsumer(TelemetryClient telemetryClient)
         {
-            _serviceBusClient = new(Environment.GetEnvironmentVariable("ServiceBusHostName"), new DefaultAzureCredential());
+            _serviceBusClient = new(Environment.GetEnvironmentVariable("ServiceBusHostName"), new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityResourceId = new ResourceIdentifier(Environment.GetEnvironmentVariable("SBNS_SENDER_MI_RESOURCE_ID")) }));
             _serviceBusSender = _serviceBusClient.CreateSender(Environment.GetEnvironmentVariable("QueueName"));
             _httpClient = new HttpClient();
+            _random = new Random();
+            _telemetryClient = telemetryClient;
         }
 
         [FunctionName("EhConsumer")]
@@ -43,17 +49,22 @@ namespace CDC.EhConsumer
                 var messageBatch = await _serviceBusSender.CreateMessageBatchAsync();
                 foreach (EventData eventData in events)
                 {
-                    /*For use if the included Generic Microserviecs API project is deployed
-                    var results = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
-                    foreach (var result in results)
-                    {
-                        log.LogInformation($"Weather Result Summary: {result.Summary}");
-                    }
-                    */
+                    var _eventStreamBacklogTracing = new EventStreamBacklogTracing(_telemetryClient);
+                    _eventStreamBacklogTracing.LogSequenceDifference(eventData, partitionContext);
 
-                    //For use if you just want to call any general HTTP endpoint to test network connectivity
-                    //var apiCallResult = await _httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
-                    //log.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}");
+                    if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ExternalApiUri")))
+                    {
+                        /*For use if the included Generic Microserviecs API project is deployed
+                        var results = await _httpClient.GetFromJsonAsync<List<WeatherForecast>>("WeatherForecast");
+                        foreach (var result in results)
+                        {
+                            log.LogInformation($"Weather Result Summary: {result.Summary}");
+                        }
+                        */
+
+                        var apiCallResult = await _httpClient.GetAsync(Environment.GetEnvironmentVariable("ExternalApiUri"));
+                        log.LogInformation($"Successfully made API call to {Environment.GetEnvironmentVariable("ExternalApiUri")}: {apiCallResult.Content}");
+                    }
 
                     var eventBody = eventData.EventBody.ToString();
 
@@ -61,8 +72,6 @@ namespace CDC.EhConsumer
                     var address = JsonConvert.DeserializeObject<Address>(eventBody);
 
                     var profileId = address.ProfileId;
-
-                    log.LogInformation($"Processed Profile ID: {profileId}");
 
                     var message = new ServiceBusMessage(eventBody) { SessionId = profileId.ToString() };
 
@@ -78,12 +87,25 @@ namespace CDC.EhConsumer
                     }
                 }
 
-                /*
-                if (DateTime.UtcNow.Millisecond.ToString().EndsWith("3"))
+                //Simulate additional processing time above and beyond the basic ETL being done above
+                if (int.TryParse(Environment.GetEnvironmentVariable("ADDITIONAL_SIMULATED_PROC_TIME_MS"), out int simulatedProcessingTime))
                 {
-                    throw new Exception("Random Exception from EhConsumer");
+                    if (simulatedProcessingTime > 0)
+                    {
+                        var additionalProcessingTime = _random.Next(0, simulatedProcessingTime);
+                        Thread.Sleep(additionalProcessingTime);
+                        log.LogInformation($"Simulated additional processing time for {additionalProcessingTime}ms");
+                    }
                 }
-                */
+
+                //Simulate random failures
+                if (int.TryParse(Environment.GetEnvironmentVariable("SIMULATED_FAILURE_RATE"), out int simulatedFailureRate))
+                {
+                    if (simulatedFailureRate > 0 && DateTime.UtcNow.Millisecond < (simulatedFailureRate / 100) * 1000)
+                    {
+                        throw new Exception("Random Exception from SbConsumer");
+                    }
+                }
 
                 await _serviceBusSender.SendMessagesAsync(messageBatch);
 

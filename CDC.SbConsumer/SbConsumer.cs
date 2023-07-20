@@ -24,10 +24,13 @@ namespace CDC.SbConsumer
         {
             _cosmosDbService = cosmosDbService;
             _random = new Random();
-            _httpClient = new HttpClient
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ExternalApiUri")))
             {
-                BaseAddress = new Uri(Environment.GetEnvironmentVariable("ExternalApiUri"))
-            };
+                _httpClient = new HttpClient
+                {
+                    BaseAddress = new Uri(Environment.GetEnvironmentVariable("ExternalApiUri"))
+                };
+            }
         }
 
         [FunctionName("SbConsumer")]
