@@ -2,17 +2,15 @@
 
 POC for CDC Effort
 
-To get started with the solution, rename example.local.settings.json to local.settings.json and update the service placeholders with valid values.
+To get started with the solution, rename example.local.settings.json files in each project to local.settings.json and update the service placeholders with valid values.
 
 The apps are designed to use Azure Managed Identites to connect to the other resources, so make sure the user under which you're running Visual Studio and the debugger has the appropriate send and/or receive role on the Service Bus or Event Hub for local debugging
 
 ## Provisioning Services
 
-To provision/deploy the necessary Azure resources to run this POC, run the deploy-all.ps1 script in a PowerShell command line window and follow the usage instructions.  The script is idempotent, so if there is a delay on registering the managed identity for the apps against other resources, such as storage, the script can be run a second time.
+To provision/deploy the necessary Azure resources to run this POC, run the deploy.ps1 script in a PowerShell command line window and follow the usage instructions.  The script will execute a main Bicep file that will provision all necessary resources including private networking and mangaged identites.
 
-The Provisioning script assumes that a resource group with centralized resources (such as Azure Container Registry or Azure Key Vault) already exists, and the prefix of this resource group must be passed in as a parameter.  If this common RG does not exist, please stub it out ahead of running the script.  The name of this common centralized resource group should end in _-rg_
-
-This POC also assumes you have an existing Mongo Atlas instance.  Creating a Mongo Atlas instances is outside the scope of this documentation, but more information can be found at [https://www.mobgodb.com](https://www.mongodb.com)
+To test the Mongo specific code, this POC also assumes you have an existing Mongo Atlas instance.  Creating a Mongo Atlas instances is outside the scope of this documentation, but more information can be found at [https://www.mobgodb.com](https://www.mongodb.com)
 
 ## Deploying Code
 
@@ -25,7 +23,7 @@ This POC also assumes you have an existing Mongo Atlas instance.  Creating a Mon
 1. **CDC.EhProducer** - Azure Function version of CDC.CLI.EhProducer used for producing an extreme volume of events/messages to the target Event Hub for performance and soak testing to validate NFRs
 1. **CDC.SbConsumer** -  Azure Function using a Service Bus Queue trigger to listen for an consume messages, by Session ID, from the queue, transform the messages, and write them to Cosmos (if they don't exist) or update them (if they do)
 
-Assuming you created a common/centralized RG as indicated in the above section, and that RG has a common/centralized Azure Container Registry, you can publish (from Visual Studio) the 3 Azure Function projects to your ACR
+Once the deploy PowerShell script has run, you can publish (from Visual Studio) the 3 Azure Function projects to your ACR
 
 ## To Stand Up Kafka Connect for MongoDB
 
