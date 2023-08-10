@@ -86,6 +86,9 @@ param storageSku string
 //param vmName string = length('${namePrefix}') > 6 ? '${substring('${namePrefix}', 0, 6)}-${regionCode}-vm': '${resourcePrefix}-vm'
 
 
+param cosmosListenerFaName string = 'cosmosListener'
+
+
 
 @description('Boolean describing whether or not to enable soft delete on Key Vault - set to TRUE for production')
 param enableKvSoftDelete bool = false
@@ -110,6 +113,8 @@ param workloadResourceGroupName string = '${resourcePrefix}-workload-rg'
 param networkResourceGroupName string = '${resourcePrefix}-network-rg'
 
 //Subnet Prefixes and Names
+param cosmosListenerSubnetAddressPrefix string
+param cosmosListenerSubnetName string = 'cosmosListener'
 param ehProducerSubnetAddressPrefix string
 param ehConsumerSubnetAddressPrefix string
 param ehConsumerSubnetName string = 'ehConsumer'
@@ -127,6 +132,8 @@ param ehProducerStorageAccountName string = toLower(length('${format('{0}sa', re
 param ehConsumerStorageAccountName string = toLower(length('${format('{0}sa', replace(resourcePrefix, '-', ''))}${ehConsumerFaName}') > 24 ? substring('${format('{0}sa', replace(resourcePrefix, '-', ''))}${ehConsumerFaName}', 0, 24) : '${format('{0}sa', replace(resourcePrefix, '-', ''))}${ehConsumerFaName}')
 param sbConsumerStorageAccountName string = toLower(length('${format('{0}sa', replace(resourcePrefix, '-', ''))}${sbConsumerFaName}') > 24 ? substring('${format('{0}sa', replace(resourcePrefix, '-', ''))}${sbConsumerFaName}', 0, 24) : '${format('{0}sa', replace(resourcePrefix, '-', ''))}${sbConsumerFaName}')
 param pyConsumerStorageAccountName string = toLower(length('${format('{0}sa', replace(resourcePrefix, '-', ''))}${pyConsumerFaName}') > 24 ? substring('${format('{0}sa', replace(resourcePrefix, '-', ''))}${pyConsumerFaName}', 0, 24) : '${format('{0}sa', replace(resourcePrefix, '-', ''))}${pyConsumerFaName}')
+param cosmosListenerStorageAccountName string = toLower(length('${format('{0}sa', replace(resourcePrefix, '-', ''))}${cosmosListenerFaName}') > 24 ? substring('${format('{0}sa', replace(resourcePrefix, '-', ''))}${cosmosListenerFaName}', 0, 24) : '${format('{0}sa', replace(resourcePrefix, '-', ''))}${cosmosListenerFaName}')
+
 
 //param vmAdminUserName string
 //@secure()
@@ -159,6 +166,8 @@ module networking 'Modules/networking.bicep' = {
   scope: resourceGroup(networkRg.name)
   name: '${timeStamp}-module-networking'
   params: {
+    cosmosListenerSubnetAddressPrefix: cosmosListenerSubnetAddressPrefix
+    cosmosListenerSubnetName: cosmosListenerSubnetName
     ehConsumerSubnetAddressPrefix: ehConsumerSubnetAddressPrefix
     ehConsumerSubnetName: ehConsumerSubnetName
     ehProducerSubnetAddressPrefix: ehProducerSubnetAddressPrefix
@@ -402,7 +411,7 @@ var functionAppDetails = [
       }
       {
         name: 'CosmosInitialAutoscaleThroughput'
-        value: '20000'
+        value: '100000'
       }
       {
         name: 'EHNS_SENDER_MI_RESOURCE_ID'
@@ -418,11 +427,11 @@ var functionAppDetails = [
       }
       {
         name: 'PROFILE_ID_MAX_RANGE'
-        value: 2000
+        value: 2000000
       }
       {
         name: 'OVERSIZE_MESSAGE_RATE'
-        value: 100000
+        value: 100000000
       }
     ]
     userAssignedIdentities: {
@@ -567,6 +576,27 @@ var functionAppDetails = [
     ]
     userAssignedIdentities: {
       '${kvSecretsUserMiId}': {}
+    }
+  }
+  {
+    name: cosmosListenerFaName
+    skuName: 'EP1'
+    storageAccountName: cosmosListenerStorageAccountName
+    dockerImageAndTag: ''
+    functionsWorkerRuntime: 'java'
+    functionSpecificAppSettings: [
+      {
+        name: 'CosmosDbConnString'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=cosmosDbConnString)'
+      }
+      {
+        name: 'ServiceBusConnString'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=serviceBusConnString)'
+      }
+    ]
+    userAssignedIdentities: {
+      '${kvSecretsUserMiId}': {}
+      '${cosmosWriterMiId}': {}
     }
   }
 ]

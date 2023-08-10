@@ -72,13 +72,21 @@ module serviceBus '../Components/serviceBus.bicep' = {
   scope: resourceGroup(workloadRgName)
   params: {
     capacity: capacity
+    keyVaultName: keyVaultName
     location: location
     name: name
     publicNetworkAccess: 'Disabled'
     queueDefinitions: [
       {
         name: 'poc.customers.addresses'
-        sessionEnabled: true
+        sessionEnabled: false
+        maxMessageSizeKb: 10
+        maxQueueSizeMb: 2048
+        maxDeliveryCount: 3
+      }
+      {
+        name: 'addresses'
+        sessionEnabled: false
         maxMessageSizeKb: 10
         maxQueueSizeMb: 2048
         maxDeliveryCount: 3
@@ -95,6 +103,7 @@ module serviceBus '../Components/serviceBus.bicep' = {
       }
     ]
     sku: sku
+    timeStamp: timeStamp
     tags: tags
     zoneRedundant: zoneRedundant
   }

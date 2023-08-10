@@ -1,4 +1,5 @@
 param capacity int
+param keyVaultName string
 param location string
 param name string
 param publicNetworkAccess string
@@ -6,6 +7,7 @@ param queueDefinitions array
 param roleAssignmentDetails array = []
 param sku string
 param tags object
+param timeStamp string
 param zoneRedundant bool
 
 resource serviceBus 'Microsoft.ServiceBus/namespaces@2022-10-01-preview' = {
@@ -18,7 +20,7 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2022-10-01-preview' = {
   properties: {
     zoneRedundant: zoneRedundant
     publicNetworkAccess: publicNetworkAccess
-    disableLocalAuth: true
+    disableLocalAuth: false
   }
   tags: tags
 }
@@ -41,6 +43,15 @@ resource roleAssigmnents 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
   }
   scope: serviceBus
 }]
+
+module serviceBusConnString 'keyVaultSecret.bicep' = {
+  name: '${timeStamp}-kvSecret-serviceBusConnString'
+  params: {
+    parentKeyVaultName: keyVaultName
+    secretName: 'serviceBusConnString'
+    secretValue: listKeys('${serviceBus.id}/AuthorizationRules/RootManageSharedAccessKey', serviceBus.apiVersion).primaryConnectionString
+  }
+}
 
 output id string = serviceBus.id
 output hostName string = '${serviceBus.name}.servicebus.windows.net'

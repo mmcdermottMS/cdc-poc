@@ -1,4 +1,4 @@
-#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
+#See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 FROM mcr.microsoft.com/azure-functions/dotnet:4 AS base
 WORKDIR /home/site/wwwroot
@@ -7,13 +7,14 @@ EXPOSE 80
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 COPY ["CDC.SbConsumer/CDC.SbConsumer.csproj", "CDC.SbConsumer/"]
+COPY ["CDC.Domain/CDC.Domain.csproj", "CDC.Domain/"]
 RUN dotnet restore "CDC.SbConsumer/CDC.SbConsumer.csproj"
 COPY . .
 WORKDIR "/src/CDC.SbConsumer"
 RUN dotnet build "CDC.SbConsumer.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "CDC.SbConsumer.csproj" -c Release -o /app/publish
+RUN dotnet publish "CDC.SbConsumer.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /home/site/wwwroot

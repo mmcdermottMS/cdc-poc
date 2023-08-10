@@ -100,16 +100,8 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
   location: location
   kind: dockerImageAndTag == '' ? 'functionapp,linux' : 'functionapp,linux,container'
   identity: {
-    //type: 'SystemAssigned, UserAssigned'
     type: 'UserAssigned'
     userAssignedIdentities: userAssignedIdentities
-    /*
-    userAssignedIdentities: {
-      '${acrPullMiObjectId}': {}
-      '${kvUserMiObjectId}': {}
-      '${ehnsUserMiObjectId}': {}
-    }
-    */
   }
   properties: {
     serverFarmId: serverFarmId
@@ -117,7 +109,7 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
     httpsOnly: true
     virtualNetworkSubnetId: subnetId
     siteConfig: {
-      linuxFxVersion: functionsWorkerRuntime == 'python' ? 'PYTHON|3.9' : 'DOCKER|${dockerImageAndTag}'
+      linuxFxVersion: functionsWorkerRuntime == 'python' ? 'PYTHON|3.9' : functionsWorkerRuntime == 'java' ? 'JAVA|11' : 'DOCKER|${dockerImageAndTag}'
       vnetRouteAllEnabled: true
       functionsRuntimeScaleMonitoringEnabled: true
       appSettings: concat(appSettings, functionSpecificAppSettings)

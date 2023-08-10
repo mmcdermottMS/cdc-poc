@@ -34,7 +34,7 @@ namespace CDC.SbConsumer
         }
 
         [FunctionName("SbConsumer")]
-        public async Task Run([ServiceBusTrigger("%QueueName%", Connection = "ServiceBusConnection", IsSessionsEnabled = true)]
+        public async Task Run([ServiceBusTrigger("%QueueName%", Connection = "ServiceBusConnection", IsSessionsEnabled = false)]
             ServiceBusReceivedMessage message,
             ServiceBusMessageActions messageActions,
             ILogger log)

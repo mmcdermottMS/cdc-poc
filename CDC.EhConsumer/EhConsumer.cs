@@ -26,9 +26,9 @@ namespace CDC.EhConsumer
         private readonly Random _random;
         private readonly TelemetryClient _telemetryClient;
 
-        public EhConsumer(TelemetryClient telemetryClient)
+        public EhConsumer(TelemetryClient telemetryClient, ServiceBusClient serviceBusClient)
         {
-            _serviceBusClient = new(Environment.GetEnvironmentVariable("ServiceBusHostName"), new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityResourceId = new ResourceIdentifier(Environment.GetEnvironmentVariable("SBNS_SENDER_MI_RESOURCE_ID")) }));
+            _serviceBusClient = serviceBusClient;
             _serviceBusSender = _serviceBusClient.CreateSender(Environment.GetEnvironmentVariable("QueueName"));
             _httpClient = new HttpClient();
             _random = new Random();
@@ -73,7 +73,7 @@ namespace CDC.EhConsumer
 
                     var profileId = address.ProfileId;
 
-                    var message = new ServiceBusMessage(eventBody) { SessionId = profileId.ToString() };
+                    var message = new ServiceBusMessage(eventBody);// { SessionId = profileId.ToString() };
 
                     if (!messageBatch.TryAddMessage(message))
                     {

@@ -30,11 +30,17 @@ namespace CDC.EhProducer
 
         public async Task PublishMessages(int messageCount, int numCycles, int delayMs, int partitionCount)
         {
-            var faker = new Faker();
-            var paragraphs = faker.Lorem.Paragraphs(5000);
-            if (paragraphs.Length > 819200)
+            var sendOversizedMessages = int.TryParse(Environment.GetEnvironmentVariable("OVERSIZE_MESSAGE_RATE"), out int oversizeMessageRate);
+
+            var paragraphs = string.Empty;
+            if (sendOversizedMessages)
             {
-                paragraphs = paragraphs[..819200];
+                var faker = new Faker();
+                paragraphs = faker.Lorem.Paragraphs(5000);
+                if (paragraphs.Length > 819200)
+                {
+                    paragraphs = paragraphs[..819200];
+                }
             }
 
             if (!int.TryParse(Environment.GetEnvironmentVariable("PROFILE_ID_MAX_RANGE"), out int profileIdMaxRange))
@@ -74,7 +80,7 @@ namespace CDC.EhProducer
                 {
                     var address = addressGenerator.Generate();
 
-                    if(int.TryParse(Environment.GetEnvironmentVariable("OVERSIZE_MESSAGE_RATE"), out int oversizeMessageRate))
+                    if(sendOversizedMessages)
                     {
                         if(i % oversizeMessageRate == 0)
                         {

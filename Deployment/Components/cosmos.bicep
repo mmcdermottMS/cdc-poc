@@ -51,8 +51,8 @@ resource roleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignment
   }
 }
 
-module vmPasswordSecret 'keyVaultSecret.bicep' = {
-  name: '${timeStamp}-kvSecret-vmPassword'
+module cosmosKey 'keyVaultSecret.bicep' = {
+  name: '${timeStamp}-kvSecret-cosmosKey'
   params: {
     parentKeyVaultName: keyVaultName
     secretName: 'cosmosKey'
@@ -60,34 +60,13 @@ module vmPasswordSecret 'keyVaultSecret.bicep' = {
   }
 }
 
-//output foo string = cosmos.
-
-/*
-resource roleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2022-11-15' = [for principalIdDetail in principalIdDetails: {
-  parent: cosmos
-  name: principalIdDetail.name
-  properties: {
-    roleDefinitionId: cosmosCustomRole.id
-    principalId: principalIdDetail.principalId
-    scope: cosmos.id
-  }
-}]
-
-module privateEndpoint 'privateendpoint.bicep' = {
-  name: '${timeStamp}-pe-cosmos'
-  scope: resourceGroup(networkResourceGroupName)
+module cosmosConnString 'keyVaultSecret.bicep' = {
+  name: '${timeStamp}-kvSecret-cosmosDbConnString'
   params: {
-    location: location
-    privateEndpointName: '${resourcePrefix}-pe-cosmos'
-    serviceResourceId: cosmos.id
-    dnsZoneName: 'privatelink.documents.azure.com'
-    networkResourceGroupName: networkResourceGroupName
-    dnsResourceGroupName: dnsResourceGroupName
-    vnetName: vnetName
-    subnetName: 'privateEndpoints'
-    groupId: 'Sql'
+    parentKeyVaultName: keyVaultName
+    secretName: 'cosmosDbConnString'
+    secretValue: cosmos.listConnectionStrings().connectionStrings[0].connectionString
   }
 }
-*/
 
 output id string = cosmos.id

@@ -1,3 +1,5 @@
+param cosmosListenerSubnetName string
+param cosmosListenerSubnetAddressPrefix string
 param location string
 param ehConsumerSubnetAddressPrefix string
 param ehConsumerSubnetName string
@@ -127,6 +129,32 @@ module vnet '../Components/vnet.bicep' = {
         name: sbConsumerSubnetName
         properties: {
           addressPrefix: sbConsumerSubnetAddressPrefix
+          networkSecurityGroup: {
+            id: functionNsg.outputs.id
+          }
+          delegations: [
+            {
+              name: '${resourcePrefix}-asp-delegation-${substring(uniqueString(deployment().name), 0, 4)}'
+              properties: {
+                serviceName: 'Microsoft.Web/serverfarms'
+              }
+              type: 'Microsoft.Network/virtualNetworks/subnets/delegations'
+            }
+          ]
+          serviceENdpoints: [
+            {
+              service: 'Microsoft.Storage'
+            }
+            {
+              service: 'Microsoft.KeyVault'
+            }
+          ]
+        }
+      }
+      {
+        name: cosmosListenerSubnetName
+        properties: {
+          addressPrefix: cosmosListenerSubnetAddressPrefix
           networkSecurityGroup: {
             id: functionNsg.outputs.id
           }
