@@ -3,6 +3,7 @@ targetScope = 'subscription'
 param namePrefix string
 param location string
 param regionCode string
+param allowedIpForStorage string
 
 @description('SKU for the container registry')
 param acrSku string
@@ -133,7 +134,6 @@ param ehConsumerStorageAccountName string = toLower(length('${format('{0}sa', re
 param sbConsumerStorageAccountName string = toLower(length('${format('{0}sa', replace(resourcePrefix, '-', ''))}${sbConsumerFaName}') > 24 ? substring('${format('{0}sa', replace(resourcePrefix, '-', ''))}${sbConsumerFaName}', 0, 24) : '${format('{0}sa', replace(resourcePrefix, '-', ''))}${sbConsumerFaName}')
 param pyConsumerStorageAccountName string = toLower(length('${format('{0}sa', replace(resourcePrefix, '-', ''))}${pyConsumerFaName}') > 24 ? substring('${format('{0}sa', replace(resourcePrefix, '-', ''))}${pyConsumerFaName}', 0, 24) : '${format('{0}sa', replace(resourcePrefix, '-', ''))}${pyConsumerFaName}')
 param cosmosListenerStorageAccountName string = toLower(length('${format('{0}sa', replace(resourcePrefix, '-', ''))}${cosmosListenerFaName}') > 24 ? substring('${format('{0}sa', replace(resourcePrefix, '-', ''))}${cosmosListenerFaName}', 0, 24) : '${format('{0}sa', replace(resourcePrefix, '-', ''))}${cosmosListenerFaName}')
-
 
 //param vmAdminUserName string
 //@secure()
@@ -620,6 +620,12 @@ module functionApps 'Modules/functionApps.bicep' = [for functionAppDetail in fun
     skuName: functionAppDetail.skuName
     skuTier: functionAppSkuTier
     storageAccountName: functionAppDetail.storageAccountName
+    storageIpRules: [
+      {
+        value: allowedIpForStorage
+        action: 'Allow'
+      }
+    ]
     storageSku: storageSku
     subnetId: '/subscriptions/${subscription().subscriptionId}/resourceGroups/${networkResourceGroupName}/providers/Microsoft.Network/virtualNetworks/${vnetName}/subnets/${functionAppDetail.name}'
     tags: tags
@@ -633,22 +639,6 @@ module functionApps 'Modules/functionApps.bicep' = [for functionAppDetail in fun
     monitoring
     containerRegistry
     keyVault
-  ]
-}]
-
-module storageLockdown 'Modules/storageLockdown.bicep' = [for functionAppDetail in functionAppDetails: {
-  scope: resourceGroup(workloadRg.name)
-  name: '${timeStamp}-${functionAppDetail.name}-storage-lockdown'
-  params: {
-    location: location
-    sku: storageSku
-    storageAccountName: functionAppDetail.storageAccountName
-    tags: tags
-    targetSubnetId: '/subscriptions/${subscription().subscriptionId}/resourceGroups/${networkResourceGroupName}/providers/Microsoft.Network/virtualNetworks/${vnetName}/subnets/${functionAppDetail.name}'
-    timeStamp: timeStamp
-  }
-  dependsOn: [
-    functionApps
   ]
 }]
 

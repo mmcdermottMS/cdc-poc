@@ -21,7 +21,7 @@
       "value": 1
     },
     "ehPartitionCount": {
-      "value": 100
+      "value": 32
     },
     "functionAppSkuTier": {
       "value": "ElasticPremium"

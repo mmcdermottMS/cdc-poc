@@ -1,4 +1,5 @@
-param defaultAction string = 'Allow' //Has to default to Allow initially to let the function apps deploy correctly, will be set to deny in a later step
+param defaultAction string
+param ipRules array
 param location string
 param name string
 param sku string
@@ -22,7 +23,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
           action: 'Allow'
         }
       ]
-      ipRules: []
+      ipRules: ipRules
       defaultAction: defaultAction
     }
   }

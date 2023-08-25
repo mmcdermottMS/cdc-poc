@@ -8,6 +8,7 @@ param location string
 param name string
 param serverFarmId string
 param storageAccountName string
+param storageIpRules array
 param storageSku string
 param subnetId string
 param tags object
@@ -34,8 +35,8 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
           action: 'Allow'
         }
       ]
-      ipRules: []
-      defaultAction: 'Allow'
+      ipRules: storageIpRules
+      defaultAction: 'Deny'
     }
   }
   tags: tags
@@ -79,6 +80,10 @@ var baseAppSettings = [
   {
     name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
     value: 'false'
+  }
+  {
+    name: 'WEBSITE_CONTENTOVERVNET'
+    value: '1'
   }
 ]
 

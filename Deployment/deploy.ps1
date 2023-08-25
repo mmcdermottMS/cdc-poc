@@ -18,6 +18,7 @@ Function DecoratedOutput {
 $timeStamp = Get-Date -Format "yyyyMMddHHmm"
 $location = $Args[0]
 $namePrefix = $Args[1]
+$publicIp = (Invoke-WebRequest -uri "https://api.ipify.org/").Content
 
 if ($Args.Length -lt 2) {
     Write-Warning "Usage: deploy-all.ps1 {location} {namePrefix}"
@@ -53,5 +54,5 @@ switch ($location) {
 }
 
 DecoratedOutput "Deploying Environment..."
-$deploy_output = az deployment sub create --name "$timeStamp-$appPrefix" --location $location --template-file main.bicep --parameters main.parameters.json location=$location namePrefix=$namePrefix regionCode=$regionCode
+$deploy_output = az deployment sub create --name "$timeStamp-$appPrefix" --location $location --template-file main.bicep --parameters main.parameters.json location=$location namePrefix=$namePrefix regionCode=$regionCode allowedIpForStorage=$publicIp
 DecoratedOutput "Environment Deployed."

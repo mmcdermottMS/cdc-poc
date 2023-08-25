@@ -13,6 +13,7 @@ param resourcePrefix string
 param skuName string
 param skuTier string
 param storageAccountName string
+param storageIpRules array
 param storageSku string
 param subnetId string
 param tags object
@@ -21,7 +22,6 @@ param userAssignedIdentities object
 param vnetName string
 param workloadResourceGroupName string
 param zoneRedundant bool
-//var subnetId = '/subscriptions/${subscription().subscriptionId}/resourceGroups/${networkRgName}/providers/Microsoft.Network/virtualNetworks/${vnetName}/subnets/${name}'
 
 module appServicePlan '../Components/appServicePlan.bicep' = {
   scope: resourceGroup(workloadResourceGroupName)
@@ -51,6 +51,7 @@ module functionApp '../Components/functionApp.bicep' = {
     name: '${resourcePrefix}-fa-${name}'
     serverFarmId: appServicePlan.outputs.id
     storageAccountName: storageAccountName
+    storageIpRules: storageIpRules
     storageSku: storageSku
     subnetId: subnetId
     tags: tags
