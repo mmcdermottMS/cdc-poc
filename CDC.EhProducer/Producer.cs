@@ -19,6 +19,7 @@ namespace CDC.EhProducer
         private readonly Random _random;
         private readonly HttpClient _httpClient;
         private readonly ILogger<Producer> _logger;
+        private readonly int _targetMessageSize = 300000;
 
         public Producer(EventHubProducerClient eventHubProducerClient, ILogger<Producer> logger)
         {
@@ -33,13 +34,15 @@ namespace CDC.EhProducer
             var sendOversizedMessages = int.TryParse(Environment.GetEnvironmentVariable("OVERSIZE_MESSAGE_RATE"), out int oversizeMessageRate);
 
             var paragraphs = string.Empty;
-            if (sendOversizedMessages)
+            if (sendOversizedMessages && oversizeMessageRate > 0)
             {
                 var faker = new Faker();
-                paragraphs = faker.Lorem.Paragraphs(5000);
-                if (paragraphs.Length > 819200)
+                //paragraphs = faker.Lorem.Paragraphs(5000);
+                paragraphs = faker.Lorem.Paragraphs(1350);
+
+                if (paragraphs.Length > _targetMessageSize)
                 {
-                    paragraphs = paragraphs[..819200];
+                    paragraphs = paragraphs[.._targetMessageSize];
                 }
             }
 
@@ -80,16 +83,16 @@ namespace CDC.EhProducer
                 {
                     var address = addressGenerator.Generate();
 
-                    if(sendOversizedMessages)
+                    if (sendOversizedMessages)
                     {
-                        if(i % oversizeMessageRate == 0)
+                        if (i % oversizeMessageRate == 0)
                         {
                             address.Street2 = paragraphs;
                         }
                     }
 
-                    address.ProfileId = _random.Next(profileIdMaxRange).ToString();
-                    address.Id = Guid.NewGuid().ToString();
+                    address.Id = _random.Next(profileIdMaxRange).ToString();
+                    //address.Id = Guid.NewGuid().ToString();
 
                     addresses.Add(address);
                 }

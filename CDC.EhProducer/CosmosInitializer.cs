@@ -14,15 +14,29 @@ namespace CDC.EhProducer
 
             var databaseResponse = await cosmosClient.CreateDatabaseIfNotExistsAsync(id: "Customers");
 
-            var containerProperties = new ContainerProperties()
+            var addressContainerProperties = new ContainerProperties()
             {
                 Id = "addresses",
-                PartitionKeyPath = "/profileId"
+                PartitionKeyPath = "/id"
+            };
+
+            var summaryContainerProperties = new ContainerProperties()
+            {
+                Id = "summaries",
+                PartitionKeyPath = "/id"
+            };
+
+            var movementContainerProperties = new ContainerProperties()
+            {
+                Id = "movements",
+                PartitionKeyPath = "/id"
             };
 
             var throughputProperties = ThroughputProperties.CreateAutoscaleThroughput(int.Parse(Environment.GetEnvironmentVariable("CosmosInitialAutoscaleThroughput")));
 
-            var container = await databaseResponse.Database.CreateContainerIfNotExistsAsync(containerProperties, throughputProperties);
+            var addressContainer = await databaseResponse.Database.CreateContainerIfNotExistsAsync(addressContainerProperties, throughputProperties);
+            var summaryContainer = await databaseResponse.Database.CreateContainerIfNotExistsAsync(summaryContainerProperties, throughputProperties);
+            var movementContainer = await databaseResponse.Database.CreateContainerIfNotExistsAsync(movementContainerProperties, throughputProperties);
         }
     }
 }

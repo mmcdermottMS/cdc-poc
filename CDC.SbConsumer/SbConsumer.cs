@@ -1,12 +1,17 @@
 using Azure.Messaging.ServiceBus;
+using Bogus;
 using CDC.Domain;
 using CDC.Domain.Interfaces;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
@@ -58,8 +63,8 @@ namespace CDC.SbConsumer
                 var sw = Stopwatch.StartNew();
 
                 var sourceAddress = JsonConvert.DeserializeObject<Address>(message.Body.ToString());
-                var targetAddress = await _cosmosDbService.GetTargetAddressByProfileIdAsync(sourceAddress.ProfileId);
 
+                var targetAddress = await _cosmosDbService.GetByIdAsync(sourceAddress.Id);
                 if (targetAddress == null)
                 {
                     targetAddress = sourceAddress;
@@ -121,6 +126,50 @@ namespace CDC.SbConsumer
         {
             await messageActions.AbandonMessageAsync(message);
             log.LogError(ex, $"{exceptionType} when consuming messages from topic {Environment.GetEnvironmentVariable("QueueName")}");
+        }
+
+        [FunctionName("UpsertAddresses")]
+        public async Task<IActionResult> UpsertAddresses([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req, ILogger log)
+        {
+            var sw = Stopwatch.StartNew();
+            if (!int.TryParse(req.Query["addressCount"], out int addressCount))
+            {
+                addressCount = 1;
+            }
+            if (addressCount < 1)
+            {
+                addressCount = 1;
+            }
+
+            if (!int.TryParse(Environment.GetEnvironmentVariable("PROFILE_ID_MAX_RANGE"), out int profileIdMaxRange))
+            {
+                profileIdMaxRange = 50000; //Set a default max range for profile IDs if one isn't configured
+            }
+            var id = _random.Next(0, profileIdMaxRange);
+
+            var addresses = new List<Address>();
+            for (int i = 0; i < addressCount; i++)
+            {
+                var addressGenerator = new Faker<Address>()
+                .StrictMode(false)
+                .Rules((f, a) =>
+                {
+                    a.Street1 = f.Address.StreetAddress(false);
+                    a.Street2 = f.Address.SecondaryAddress();
+                    a.City = f.Address.City();
+                    a.State = f.Address.StateAbbr();
+                    a.Zip = f.Address.ZipCode();
+                    a.ZipExtension = f.Random.Number(1000, 9999).ToString();
+                    a.CreatedDateUtc = DateTime.UtcNow;
+                    a.UpdatedDateUtc = DateTime.UtcNow;
+                });
+                var address = addressGenerator.Generate();
+                address.Id = id.ToString();
+            }
+
+            await _cosmosDbService.UpsertTargetAddresses(addresses);
+
+            return new OkObjectResult($"Upserted {addressCount} addresses in {sw.ElapsedMilliseconds}ms");
         }
     }
 }

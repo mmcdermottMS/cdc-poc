@@ -71,10 +71,8 @@ namespace CDC.EhConsumer
                     //TODO: Deserialize against Azure Schema Registry Here
                     var address = JsonConvert.DeserializeObject<Address>(eventBody);
 
-                    var profileId = address.ProfileId;
-
                     var message = new ServiceBusMessage(eventBody);// { SessionId = profileId.ToString() };
-
+                    
                     if (!messageBatch.TryAddMessage(message))
                     {
                         await _serviceBusSender.SendMessagesAsync(messageBatch);

@@ -45,7 +45,7 @@ namespace CDC.CLI.EhProducer
                 for (int i = 0; i < messageCount; i++)
                 {
                     var address = addressGenerator.Generate();
-                    address.ProfileId = Guid.NewGuid().ToString();
+                    address.Id = Guid.NewGuid().ToString();
 
                     addresses.Add(address);
                 }

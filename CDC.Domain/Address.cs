@@ -7,9 +7,6 @@ namespace CDC.Domain
         [JsonProperty("id")]
         public string? Id { get; set; }
 
-        [JsonProperty("profileId")]
-        public string? ProfileId { get; set; }
-
         public string? Street1 { get; set; }
 
         public string? Street2 { get; set; }

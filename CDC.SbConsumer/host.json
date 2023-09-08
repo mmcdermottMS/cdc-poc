@@ -20,10 +20,10 @@
         "maxDelay": "00:01:00",
         "maxRetries": 3
       },
-      "prefetchCount": 10,
+      "prefetchCount": 30,
       "autoCompleteMessages": false,
       "maxAutoLockRenewalDuration": "00:00:30",
-      "maxConcurrentCalls": 8,
+      "maxConcurrentCalls": 10,
       "sessionIdleTimeout": "00:00:01"
     }
   }
