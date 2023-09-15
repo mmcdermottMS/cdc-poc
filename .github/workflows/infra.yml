@@ -18,4 +18,4 @@ jobs:
               with:
                 template: ./Deployment/main.bicep
                 scope: "subscription"
-                parameters: 'location=${{ vars.LOCATION }} regionCode=${{ vars.REGIONCODE }}'
+                parameters: ./Deployment/main.parameters.json
