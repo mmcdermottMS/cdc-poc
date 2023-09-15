@@ -17,4 +17,4 @@ jobs:
               uses: azure/arm-deploy@v1
               with:
                 template: ./Deployment/main.bicep
-                scope: "Resource Group"
+                scope: "subscription"
