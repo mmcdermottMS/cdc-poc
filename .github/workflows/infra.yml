@@ -4,14 +4,17 @@ on:
     workflow_dispatch
 
 jobs:
-    foo:
+    build-deploy:
         runs-on: ubuntu-latest
         steps:
-            - run: |
-                echo "Log level: $LEVEL"
-                echo "Tags: $TAGS"
-                echo "Environment: $ENVIRONMENT"
-              env:
-                LEVEL: ${{ inputs.logLevel }}
-                TAGS: ${{ inputs.tags }}
-                ENVIRONMENT: ${{ inputs.environment }}
+            - uses: actions/checkout@main
+
+            - uses: azure/login@v1
+              with:
+                creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+            - name: deploy
+              uses: azure/arm-deploy@v1
+              with:
+                template: ./Deployment/main.bicep
+                scope: "Resource Group"
