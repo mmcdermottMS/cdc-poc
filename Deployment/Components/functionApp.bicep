@@ -36,7 +36,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
         }
       ]
       ipRules: storageIpRules
-      defaultAction: 'Deny'
+      defaultAction: 'Allow'
     }
   }
   tags: tags
@@ -81,10 +81,10 @@ var baseAppSettings = [
     name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
     value: 'false'
   }
-  {
-    name: 'WEBSITE_CONTENTOVERVNET'
-    value: '1'
-  }
+  //{
+  //  name: 'WEBSITE_CONTENTOVERVNET'
+  //  value: '1'
+  //}
 ]
 
 var dockerAppSettings = [

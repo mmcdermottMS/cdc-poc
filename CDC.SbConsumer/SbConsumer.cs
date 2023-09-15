@@ -82,7 +82,7 @@ namespace CDC.SbConsumer
                 }
 
                 await _cosmosDbService.UpsertTargetAddress(targetAddress);
-                log.LogInformation($"Upserted Address - Latency in MS: {targetAddress.LatencyMs}");
+                //log.LogInformation($"Upserted Address - Latency in MS: {targetAddress.LatencyMs}");
 
                 //Simulate additional processing time above and beyond the basic ETL being done above
                 if (int.TryParse(Environment.GetEnvironmentVariable("ADDITIONAL_SIMULATED_PROC_TIME_MS"), out int simulatedProcessingTime))
@@ -104,7 +104,7 @@ namespace CDC.SbConsumer
 
                 await messageActions.CompleteMessageAsync(message);
 
-                log.LogInformation($"Processed Profile ID: {message.SessionId} in {sw.ElapsedMilliseconds}ms");
+                //log.LogInformation($"Processed Profile ID: {message.SessionId} in {sw.ElapsedMilliseconds}ms");
             }
             //TODO: https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-exceptions
             catch (ServiceBusException ex)
