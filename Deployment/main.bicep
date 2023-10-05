@@ -590,8 +590,12 @@ var functionAppDetails = [
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=cosmosDbConnString)'
       }
       {
-        name: 'ServiceBusConnString'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=serviceBusConnString)'
+        name: 'CosmosDbDatabase'
+        value: 'Customers'
+      }
+      {
+        name: 'ContainerName'
+        value: 'addresses'
       }
     ]
     userAssignedIdentities: {
