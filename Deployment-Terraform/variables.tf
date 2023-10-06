@@ -50,6 +50,12 @@ variable "kv_name" {
   default     = ""
 }
 
+variable "kv_mi_name" {
+  type        = string
+  description = "Name of the user-assigned Managed Identity that will be granted the Key Vault Secrets User role."
+  default     = ""
+}
+
 variable "law_name" {
   type        = string
   description = "The name of the Log Analytics Workspace. If not specified, a name will be generated using the name_prefix and region_code variables."

@@ -1,3 +1,5 @@
+data "azurerm_client_config" "current" {}
+
 locals {
   resource_prefix = var.resource_prefix
 }
@@ -36,11 +38,11 @@ resource "azurerm_subnet" "pe_subnet" {
   address_prefixes     = ["${cidrsubnet(var.vnet_addr_prefix, 8, 1)}"]
 }
 
-resource "azurerm_subnet" "ehProducer_subnet" {
-  name                 = "${local.resource_prefix}-subnet-ehProducer"
+resource "azurerm_subnet" "function_app_subnet" {
+  name                 = "${local.resource_prefix}-subnet-${var.function_app_names[count.index]}"
   resource_group_name  = var.rg_name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["${cidrsubnet(var.vnet_addr_prefix, 8, 2)}"]
+  address_prefixes     = ["${cidrsubnet(var.vnet_addr_prefix, 8, count.index + 2)}"]
   delegation {
     name = "${local.resource_prefix}-asp-delegation-${random_string.random.result}"
     service_delegation {
@@ -48,62 +50,7 @@ resource "azurerm_subnet" "ehProducer_subnet" {
     }
   }
   service_endpoints = ["Microsoft.Storage", "Microsoft.KeyVault"]
-}
-
-resource "azurerm_subnet" "ehConsumer_subnet" {
-  name                 = "${local.resource_prefix}-subnet-ehConsumer"
-  resource_group_name  = var.rg_name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["${cidrsubnet(var.vnet_addr_prefix, 8, 3)}"]
-  delegation {
-    name = "${local.resource_prefix}-asp-delegation-${random_string.random.result}"
-    service_delegation {
-      name = "Microsoft.Web/serverFarms"
-    }
-  }
-  service_endpoints = ["Microsoft.Storage", "Microsoft.KeyVault"]
-}
-
-resource "azurerm_subnet" "pyConsumer_subnet" {
-  name                 = "${local.resource_prefix}-subnet-pyConsumer"
-  resource_group_name  = var.rg_name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["${cidrsubnet(var.vnet_addr_prefix, 8, 4)}"]
-  delegation {
-    name = "${local.resource_prefix}-asp-delegation-${random_string.random.result}"
-    service_delegation {
-      name = "Microsoft.Web/serverFarms"
-    }
-  }
-  service_endpoints = ["Microsoft.Storage", "Microsoft.KeyVault"]
-}
-
-resource "azurerm_subnet" "sbConsumer_subnet" {
-  name                 = "${local.resource_prefix}-subnet-sbConsumer"
-  resource_group_name  = var.rg_name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["${cidrsubnet(var.vnet_addr_prefix, 8, 5)}"]
-  delegation {
-    name = "${local.resource_prefix}-asp-delegation-${random_string.random.result}"
-    service_delegation {
-      name = "Microsoft.Web/serverFarms"
-    }
-  }
-  service_endpoints = ["Microsoft.Storage", "Microsoft.KeyVault"]
-}
-
-resource "azurerm_subnet" "cosmosListener_subnet" {
-  name                 = "${local.resource_prefix}-subnet-cosmosListener"
-  resource_group_name  = var.rg_name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["${cidrsubnet(var.vnet_addr_prefix, 8, 6)}"]
-  delegation {
-    name = "${local.resource_prefix}-asp-delegation-${random_string.random.result}"
-    service_delegation {
-      name = "Microsoft.Web/serverFarms"
-    }
-  }
-  service_endpoints = ["Microsoft.Storage", "Microsoft.KeyVault"]
+  count             = length(var.function_app_names)
 }
 
 /**************************************************************/
@@ -178,27 +125,8 @@ resource "azurerm_subnet_network_security_group_association" "pe_nsg_assoc" {
   network_security_group_id = azurerm_network_security_group.pe_nsg.id
 }
 
-resource "azurerm_subnet_network_security_group_association" "ehProducer_nsg_assoc" {
-  subnet_id                 = azurerm_subnet.ehProducer_subnet.id
+resource "azurerm_subnet_network_security_group_association" "function_app_nsg_assoc" {
+  subnet_id                 = "/subscriptions/${data.azurerm_client_config.current.subscription_id}}/resourceGroups/${var.rg_name}/providers/Microsoft.Network/virtualNetworks/${var.vnet_name}/subnets/${local.resource_prefix}-subnet-${var.function_app_names[count.index]}"
   network_security_group_id = azurerm_network_security_group.functions_nsg.id
-}
-
-resource "azurerm_subnet_network_security_group_association" "ehConsumer_nsg_assoc" {
-  subnet_id                 = azurerm_subnet.ehConsumer_subnet.id
-  network_security_group_id = azurerm_network_security_group.functions_nsg.id
-}
-
-resource "azurerm_subnet_network_security_group_association" "pyConsumer_nsg_assoc" {
-  subnet_id                 = azurerm_subnet.pyConsumer_subnet.id
-  network_security_group_id = azurerm_network_security_group.functions_nsg.id
-}
-
-resource "azurerm_subnet_network_security_group_association" "sbConsumer_nsg_assoc" {
-  subnet_id                 = azurerm_subnet.sbConsumer_subnet.id
-  network_security_group_id = azurerm_network_security_group.functions_nsg.id
-}
-
-resource "azurerm_subnet_network_security_group_association" "cosmosListener_nsg_assoc" {
-  subnet_id                 = azurerm_subnet.cosmosListener_subnet.id
-  network_security_group_id = azurerm_network_security_group.functions_nsg.id
+  count                     = length(var.function_app_names)
 }

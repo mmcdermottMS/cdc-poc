@@ -6,6 +6,13 @@ module "private_dns" {
   zone_name = "privatelink.vaultcore.azure.net"
 }
 
+module "mi" {
+  source   = "../ManagedIdentity"
+  location = var.location
+  name     = var.mi_name
+  rg_name  = var.workload_rg_name
+}
+
 resource "azurerm_key_vault" "key_vault" {
   name                       = var.name
   location                   = var.location
@@ -21,3 +28,5 @@ resource "azurerm_key_vault" "key_vault" {
     ip_rules       = []
   }
 }
+
+#module "pe" {}

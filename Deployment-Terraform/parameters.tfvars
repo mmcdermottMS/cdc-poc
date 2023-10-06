@@ -27,6 +27,7 @@ tags = {
 ### Uncomment these values to apply your own naming convention
 
 #ai_name          = ""
+#kv_mi_name       = ""
 #kv_name          = ""
 #law_name         = ""
 #network_rg_name  = ""
