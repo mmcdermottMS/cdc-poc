@@ -54,6 +54,8 @@ module "keyvault" {
   mi_name          = local.kv_mi_name
   name             = local.kv_name
   network_rg_name  = azurerm_resource_group.network_rg.name
+  pe_name          = "${local.resource_prefix}-pe-kv"
+  subnet_id        = module.networking.pe_subnet_id
   tags             = var.tags
   tenant_id        = data.azurerm_client_config.current.tenant_id
   vnet_name        = module.networking.vnet_name

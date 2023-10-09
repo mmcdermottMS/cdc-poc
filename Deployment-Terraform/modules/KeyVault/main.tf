@@ -1,9 +1,13 @@
+locals {
+  zone_name = "privatelink.vaultcore.azure.net"
+}
+
 module "private_dns" {
   source    = "../PrivateDNSZones"
   rg_name   = var.network_rg_name
   tags      = var.tags
   vnet_name = var.vnet_name
-  zone_name = "privatelink.vaultcore.azure.net"
+  zone_name = local.zone_name
 }
 
 module "mi" {
@@ -24,9 +28,25 @@ resource "azurerm_key_vault" "key_vault" {
   tags                       = var.tags
   network_acls {
     default_action = "Deny"
-    bypass         = "AzureServices"
-    ip_rules       = []
+    bypass         = "None"
   }
 }
 
-#module "pe" {}
+resource "azurerm_role_assignment" "mi_secrets_reader" {
+  scope                = azurerm_key_vault.key_vault.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = module.mi.principal_id
+}
+
+module "pe" {
+  source        = "../PrivateEndpoint"
+  dnz_zone_id   = module.private_dns.id
+  dns_zone_name = local.zone_name
+  location      = var.location
+  name          = var.pe_name
+  resource_id   = azurerm_key_vault.key_vault.id
+  resource_name = "vault"
+  rg_name       = var.workload_rg_name
+  subnet_id     = var.subnet_id
+  tags          = var.tags
+}

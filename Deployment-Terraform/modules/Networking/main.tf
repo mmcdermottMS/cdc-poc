@@ -38,7 +38,7 @@ resource "azurerm_subnet" "pe_subnet" {
   address_prefixes     = ["${cidrsubnet(var.vnet_addr_prefix, 8, 1)}"]
 }
 
-resource "azurerm_subnet" "function_app_subnet" {
+resource "azurerm_subnet" "function_app_subnets" {
   name                 = "${local.resource_prefix}-subnet-${var.function_app_names[count.index]}"
   resource_group_name  = var.rg_name
   virtual_network_name = azurerm_virtual_network.vnet.name
@@ -129,4 +129,7 @@ resource "azurerm_subnet_network_security_group_association" "function_app_nsg_a
   subnet_id                 = "/subscriptions/${data.azurerm_client_config.current.subscription_id}}/resourceGroups/${var.rg_name}/providers/Microsoft.Network/virtualNetworks/${var.vnet_name}/subnets/${local.resource_prefix}-subnet-${var.function_app_names[count.index]}"
   network_security_group_id = azurerm_network_security_group.functions_nsg.id
   count                     = length(var.function_app_names)
+  depends_on = [
+    azurerm_subnet.function_app_subnets
+  ]
 }

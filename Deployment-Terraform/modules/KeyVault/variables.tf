@@ -18,6 +18,16 @@ variable "network_rg_name" {
   description = "Name of the resource group containing network resources."
 }
 
+variable "pe_name" {
+  type        = string
+  description = "Name of the Private Endpoint associated with the key vault."
+}
+
+variable "subnet_id" {
+  type        = string
+  description = "ID of the subnet that will contain the Private Endpoint."
+}
+
 variable "tags" {
   type    = map(any)
   default = {}
