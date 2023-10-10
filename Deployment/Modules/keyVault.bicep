@@ -67,7 +67,7 @@ module keyVault '../Components/keyVault.bicep' = {
   ]
 }
 
-module kvPrivateEndpoint '../Components/privateendpoint.bicep' = {
+module kvPrivateEndpoint '../Components/privateEndpoint.bicep' = {
   name: '${timeStamp}-pe-kv'
   scope: resourceGroup(networkRgName)
   params: {
