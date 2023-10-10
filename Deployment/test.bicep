@@ -19,6 +19,12 @@ param pyConsumerFaName string = 'pyConsumer'
 @description('Name of the cosmosListener Function App. Specify this value in the parameters.json file to override this default.')
 param cosmosListenerFaName string = 'cosmosListener'
 
+@description('Name of the application insights instance. Specify this value in the parameters.json file to override this default.')
+param appInsightsName string = '${resourcePrefix}-ai'
+
+@description('Name of the log analytics workspace instance. Specify this value in the parameters.json file to override this default.')
+param logAnalyticsWorkspaceName string = '${resourcePrefix}-law'
+
 param tags object = {}
 param timeStamp string = utcNow('yyyyMMddHHmm')
 param resourcePrefix string = '${namePrefix}-${regionCode}'
@@ -36,6 +42,9 @@ param utilSubnetName string = 'util'
 param vnetAddressPrefix string
 param vnetName string = '${resourcePrefix}-vnet'
 
+/**************************************************************/
+/*                      RESOURCE GROUPS                       */
+/**************************************************************/
 resource workloadRg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   name: workloadResourceGroupName
   location: location
@@ -76,5 +85,21 @@ module networking 'Modules/networking.bicep' = {
     utilSubnetName: utilSubnetName
     vnetAddressPrefix: vnetAddressPrefix
     vnetName: vnetName
+  }
+}
+
+/**************************************************************/
+/*                        MONITORING                          */
+/**************************************************************/
+module monitoring 'Modules/monitoring.bicep' = {
+  scope: resourceGroup(workloadRg.name)
+  name: '${timeStamp}-module-monitoring'
+  params: {
+    appInsightsName: appInsightsName
+    location: location
+    logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
+    resourceGroupName: workloadRg.name
+    tags: tags
+    timeStamp: timeStamp
   }
 }

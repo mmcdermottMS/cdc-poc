@@ -112,14 +112,10 @@ param networkResourceGroupName string = '${resourcePrefix}-network-rg'
 
 //Subnet Prefixes and Names
 param cosmosListenerSubnetAddressPrefix string
-param cosmosListenerSubnetName string = 'cosmosListener'
 param ehProducerSubnetAddressPrefix string
 param ehConsumerSubnetAddressPrefix string
-param ehConsumerSubnetName string = 'ehConsumer'
 param pyConsumerSubnetAddressPrefix string
-param pyConsumerSubnetName string = 'pyConsumer'
 param sbConsumerSubnetAddressPrefix string
-param sbConsumerSubnetName string = 'sbConsumer'
 param peSubnetAddressPrefix string
 param peSubnetName string = 'privateEndpoints'
 param utilSubnetAddressPrefix string
@@ -164,20 +160,20 @@ module networking 'Modules/networking.bicep' = {
   name: '${timeStamp}-module-networking'
   params: {
     cosmosListenerSubnetAddressPrefix: cosmosListenerSubnetAddressPrefix
-    cosmosListenerSubnetName: cosmosListenerSubnetName
+    cosmosListenerSubnetName: cosmosListenerFaName
     ehConsumerSubnetAddressPrefix: ehConsumerSubnetAddressPrefix
-    ehConsumerSubnetName: ehConsumerSubnetName
+    ehConsumerSubnetName: ehConsumerFaName
     ehProducerSubnetAddressPrefix: ehProducerSubnetAddressPrefix
     ehProducerSubnetName: ehProducerFaName
     location: location
     peSubnetAddressPrefix: peSubnetAddressPrefix
     peSubnetName: peSubnetName
     pyConsumerSubnetAddressPrefix: pyConsumerSubnetAddressPrefix
-    pyConsumerSubnetName: pyConsumerSubnetName
+    pyConsumerSubnetName: pyConsumerFaName
     resourceGroupName: networkRg.name
     resourcePrefix: resourcePrefix
     sbConsumerSubnetAddressPrefix: sbConsumerSubnetAddressPrefix
-    sbConsumerSubnetName: sbConsumerSubnetName
+    sbConsumerSubnetName: sbConsumerFaName
     tags: tags
     timeStamp: timeStamp
     utilSubnetAddressPrefix: utilSubnetAddressPrefix
