@@ -11,6 +11,30 @@
     "namePrefix": {
       "value": "foo"
     },
+    "vnetAddressPrefix": {
+      "value": "10.0.0.0/16"
+    },
+    "utilSubnetAddressPrefix": {
+      "value": "10.0.0.0/24"
+    },
+    "peSubnetAddressPrefix": {
+      "value": "10.0.1.0/24"
+    },
+    "ehProducerSubnetAddressPrefix": {
+      "value": "10.0.2.0/24"
+    },
+    "ehConsumerSubnetAddressPrefix": {
+      "value": "10.0.3.0/24"
+    },
+    "pyConsumerSubnetAddressPrefix": {
+      "value": "10.0.4.0/24"
+    },
+    "sbConsumerSubnetAddressPrefix": {
+      "value": "10.0.5.0/24"
+    },
+    "cosmosListenerSubnetAddressPrefix": {
+      "value": "10.0.6.0/24"
+    },
     "tags": {
       "value": {
         "project": "CDC-POC",
