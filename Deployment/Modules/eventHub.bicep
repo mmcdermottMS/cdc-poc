@@ -80,7 +80,7 @@ module eventHub '../Components/eventHub.bicep' = {
   ]
 }
 
-module ehPrivateEndpoint '../Components/privateendpoint.bicep' = {
+module ehPrivateEndpoint '../Components/privateEndpoint.bicep' = {
   name: '${timeStamp}-pe-ehns'
   scope: resourceGroup(networkRgName)
   params: {

@@ -113,7 +113,7 @@ module serviceBus '../Components/serviceBus.bicep' = {
   ]
 }
 
-module sbPrivateEndpoint '../Components/privateendpoint.bicep' = {
+module sbPrivateEndpoint '../Components/privateEndpoint.bicep' = {
   name: '${timeStamp}-pe-sbns'
   scope: resourceGroup(networkRgName)
   params: {

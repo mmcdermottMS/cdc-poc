@@ -69,7 +69,7 @@ module containerRegistry '../Components/containerRegistry.bicep' = {
 //TODO - Temporarily commenting out the PE and private zone until I can figure out how to 
 //       properly configure a container registry on a priavte network
 /*
-module acrPrivateEndpoint '../Components/privateendpoint.bicep' = {
+module acrPrivateEndpoint '../Components/privateEndpoint.bicep' = {
   name: '${timeStamp}-pe-acr'
   scope: resourceGroup(networkRgName)
   params: {

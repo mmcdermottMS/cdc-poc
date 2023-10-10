@@ -57,7 +57,7 @@ module cosmosDb '../Components/cosmos.bicep' = {
   }
 }
 
-module cosmosPrivateEndpoint '../Components/privateendpoint.bicep' = {
+module cosmosPrivateEndpoint '../Components/privateEndpoint.bicep' = {
   name: '${timeStamp}-pe-acdb'
   scope: resourceGroup(networkRgName)
   params: {

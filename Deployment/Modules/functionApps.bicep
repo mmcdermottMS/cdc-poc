@@ -62,7 +62,7 @@ module functionApp '../Components/functionApp.bicep' = {
   ]
 }
 
-module ehPrivateEndpoint '../Components/privateendpoint.bicep' = {
+module ehPrivateEndpoint '../Components/privateEndpoint.bicep' = {
   name: '${timeStamp}-pe-${name}'
   scope: resourceGroup(networkRgName)
   params: {
