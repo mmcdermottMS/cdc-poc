@@ -19,4 +19,4 @@ jobs:
                 template: ./Deployment/main.bicep
                 scope: "subscription"
                 parameters: ./Deployment/main.parameters.json
-                region: ${{ env.LOCATION }}
+                region: "eastus"
