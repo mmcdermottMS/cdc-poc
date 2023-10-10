@@ -159,7 +159,6 @@ resource networkRg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 /**************************************************************/
 /*                        NETWORKING                          */
 /**************************************************************/
-/*
 module networking 'Modules/networking.bicep' = {
   scope: resourceGroup(networkRg.name)
   name: '${timeStamp}-module-networking'
@@ -191,7 +190,6 @@ module networking 'Modules/networking.bicep' = {
 /**************************************************************/
 /*                        MONITORING                          */
 /**************************************************************/
-/*
 module monitoring 'Modules/monitoring.bicep' = {
   scope: resourceGroup(workloadRg.name)
   name: '${timeStamp}-module-monitoring'
@@ -208,7 +206,6 @@ module monitoring 'Modules/monitoring.bicep' = {
 /**************************************************************/
 /*                        KEY VAULT                           */
 /**************************************************************/
-/*
 module keyVault 'Modules/keyVault.bicep' = {
   scope: resourceGroup(workloadRg.name)
   name: '${timeStamp}-module-keyVault'
@@ -249,7 +246,6 @@ module keyVault 'Modules/keyVault.bicep' = {
 /**************************************************************/
 /*                   CONTAINER REGISTRY                       */
 /**************************************************************/
-/*
 module containerRegistry 'Modules/containerRegistry.bicep' = {
   scope: resourceGroup(workloadRg.name)
   name: '${timeStamp}-module-containerRegistry'
@@ -273,7 +269,6 @@ module containerRegistry 'Modules/containerRegistry.bicep' = {
 /**************************************************************/
 /*                       SERVICE BUS                          */
 /**************************************************************/
-/*
 module serviceBus 'Modules/serviceBus.bicep' = {
   scope: resourceGroup(workloadRg.name)
   name: '${timeStamp}-module-serviceBus'
@@ -303,7 +298,6 @@ module serviceBus 'Modules/serviceBus.bicep' = {
 /**************************************************************/
 /*                        EVENT HUB                           */
 /**************************************************************/
-/*
 module eventHub 'Modules/eventHub.bicep' = {
   scope: resourceGroup(workloadRg.name)
   name: '${timeStamp}-module-eventHub'
@@ -335,7 +329,6 @@ module eventHub 'Modules/eventHub.bicep' = {
 /**************************************************************/
 /*                        COSMOS DB                           */
 /**************************************************************/
-/*
 module cosmos 'Modules/cosmos.bicep' = {
   scope: resourceGroup(workloadRg.name)
   name: '${timeStamp}-module-cosmos'
@@ -358,7 +351,6 @@ module cosmos 'Modules/cosmos.bicep' = {
 /**************************************************************/
 /*                      FUNCTION APPS                         */
 /**************************************************************/
-/*
 //Moving the private zone setup out of the function app module to avoid repeat deployment for each FA
 module privateZoneFa 'Components/privateDnsZone.bicep' = {
   name: '${timeStamp}-fa-privateDnsZone'
