@@ -16,7 +16,7 @@ jobs:
             - name: deploy
               uses: azure/arm-deploy@v1
               with:
-                template: ./Deployment/main.bicep
+                template: ./Deployment/test.bicep
                 scope: "subscription"
-                parameters: ./Deployment/main.parameters.json
+                parameters: ./Deployment/test.parameters.json
                 region: "eastus"
