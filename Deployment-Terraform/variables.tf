@@ -34,10 +34,21 @@ variable "tags" {
   default = {}
 }
 
-
 /**************************************************************/
 /*                      RESOURCE NAMES                        */
 /**************************************************************/
+variable "acr_name" {
+  type        = string
+  description = "Name of the Azure Container Registry"
+  default     = ""
+}
+
+variable "acr_mi_name" {
+  type        = string
+  description = "Name of the user-assigned Managed Identity that will be granted the ACR Pull role"
+  default     = ""
+}
+
 variable "ai_name" {
   type        = string
   description = "The name of the Application Insights instance. If not specified, a name will be generated using the name_prefix and region_code variables."

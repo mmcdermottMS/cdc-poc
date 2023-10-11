@@ -26,6 +26,8 @@ tags = {
 
 ### Uncomment these values to apply your own naming convention
 
+#acr_mi_name      = ""
+#acr_name         = ""
 #ai_name          = ""
 #kv_mi_name       = ""
 #kv_name          = ""

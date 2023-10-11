@@ -13,24 +13,14 @@ variable "name" {
   description = "Name of the Key Vault instance."
 }
 
-variable "network_rg_name" {
-  type        = string
-  description = "Name of the resource group containing network resources."
-}
-
-variable "pe_name" {
-  type        = string
-  description = "Name of the Private Endpoint associated with the key vault."
-}
-
 variable "rg_name" {
   type        = string
   description = "Name of the resource group to deploy the resource to."
 }
 
-variable "subnet_id" {
+variable "sku" {
   type        = string
-  description = "ID of the subnet that will contain the Private Endpoint."
+  description = "SKU of the container registry."
 }
 
 variable "tags" {
@@ -38,7 +28,3 @@ variable "tags" {
   default = {}
 }
 
-variable "vnet_name" {
-  type        = string
-  description = "Name of the VNET."
-}

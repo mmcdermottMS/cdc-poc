@@ -1,3 +1,5 @@
+data "azurerm_client_config" "current" {}
+
 locals {
   zone_name = "privatelink.vaultcore.azure.net"
 }
@@ -14,14 +16,14 @@ module "mi" {
   source   = "../ManagedIdentity"
   location = var.location
   name     = var.mi_name
-  rg_name  = var.workload_rg_name
+  rg_name  = var.rg_name
 }
 
 resource "azurerm_key_vault" "key_vault" {
   name                       = var.name
   location                   = var.location
-  resource_group_name        = var.workload_rg_name
-  tenant_id                  = var.tenant_id
+  resource_group_name        = var.rg_name
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
   sku_name                   = "standard"
   purge_protection_enabled   = false
   soft_delete_retention_days = 7
@@ -46,7 +48,7 @@ module "pe" {
   name          = var.pe_name
   resource_id   = azurerm_key_vault.key_vault.id
   resource_name = "vault"
-  rg_name       = var.workload_rg_name
+  rg_name       = var.network_rg_name
   subnet_id     = var.subnet_id
   tags          = var.tags
 }
