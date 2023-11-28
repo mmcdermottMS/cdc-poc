@@ -35,9 +35,6 @@
     "ehPartitionCount": {
       "value": 32
     },
-    "functionAppSkuTier": {
-      "value": "ElasticPremium"
-    },
     "maximumElasticWorkerCount": {
       "value": 100
     },

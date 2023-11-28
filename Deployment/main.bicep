@@ -77,9 +77,6 @@ param sbnsOwnerMiName string = '${resourcePrefix}-mi-sbnsOwner'
 @description('Name of the managed identity that has the Service Bus Sender role. Specify this value in the parameters.json file to override this default.')
 param sbnsSenderMiName string = '${resourcePrefix}-mi-sbnsSender'
 
-@description('SKU Tier of the Function App Plan.')
-param functionAppSkuTier string
-
 @description('SKU of the storage accounts to use with the premium function apps.')
 param storageSku string
 
@@ -136,6 +133,14 @@ param vnetAddressPrefix string
 param vnetName string = '${resourcePrefix}-vnet'
 
 param zoneRedundant bool
+
+var ehnsReceiverMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${ehnsReceiverManagedIdentityName}'
+var ehnsSenderMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${ehnsSenderManagedIdentityName}'
+var acrPullMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${acrManagedIdentityName}'
+var kvSecretsUserMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${kvManagedIdentityName}'
+var sbnsSenderMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${sbnsSenderMiName}'
+var sbnsOwnerMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${sbnsOwnerMiName}'
+var cosmosWriterMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${cosmosWriterMiName}'
 
 /**************************************************************/
 /*                      RESOURCE GROUPS                       */
@@ -374,18 +379,12 @@ module vnetSbnsZoneLink 'Components/virtualNetworkLink.bicep' = {
   ]
 }
 
-var ehnsReceiverMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${ehnsReceiverManagedIdentityName}'
-var ehnsSenderMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${ehnsSenderManagedIdentityName}'
-var acrPullMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${acrManagedIdentityName}'
-var kvSecretsUserMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${kvManagedIdentityName}'
-var sbnsSenderMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${sbnsSenderMiName}'
-var sbnsOwnerMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${sbnsOwnerMiName}'
-var cosmosWriterMiId = '/subscriptions/${subscription().subscriptionId}/resourcegroups/${workloadResourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${cosmosWriterMiName}'
-
 var functionAppDetails = [
   {
     name: ehProducerFaName
     skuName: 'EP1'
+    tierName: 'ElasticPremium'
+    serverOS: 'Linux'
     storageAccountName: ehProducerStorageAccountName
     dockerImageAndTag: 'cdcehproducer:latest'
     functionsWorkerRuntime: 'dotnet'
@@ -434,55 +433,10 @@ var functionAppDetails = [
     }
   }
   {
-    name: ehConsumerFaName
-    skuName: 'EP1'
-    storageAccountName: ehConsumerStorageAccountName
-    dockerImageAndTag: 'cdcehconsumer:latest'
-    functionsWorkerRuntime: 'dotnet'
-    functionSpecificAppSettings: [
-      {
-        name: 'ExternalApiUri'
-        value: ''
-      }
-      {
-        name: 'ADDITIONAL_SIMULATED_PROC_TIME_MS'
-        value: 0
-      }
-      {
-        name: 'EhNameSpace__clientId'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=ehnsReceiverMiClientId)'
-      }
-      {
-        name: 'EhNameSpace__fullyQualifiedNamespace'
-        value: '${ehnsName}.servicebus.windows.net'
-      }
-      {
-        name: 'EhName'
-        value: entityCollectionName
-      }
-      {
-        name: 'ServiceBusHostName'
-        value: '${serviceBusName}.servicebus.windows.net'
-      }
-      {
-        name: 'SBNS_SENDER_MI_RESOURCE_ID'
-        value: sbnsSenderMiId
-      }
-      {
-        name: 'QueueName'
-        value: entityCollectionName
-      }
-    ]
-    userAssignedIdentities: {
-      '${acrPullMiId}': {}
-      '${kvSecretsUserMiId}': {}
-      '${ehnsReceiverMiId}': {}
-      '${sbnsSenderMiId}': {}
-    }
-  }
-  {
     name: sbConsumerFaName
     skuName: 'EP1'
+    tierName: 'ElasticPremium'
+    serverOS: 'Linux'
     storageAccountName: sbConsumerStorageAccountName
     dockerImageAndTag: 'cdcsbconsumer:latest'
     functionsWorkerRuntime: 'dotnet'
@@ -522,6 +476,8 @@ var functionAppDetails = [
   {
     name: pyConsumerFaName
     skuName: 'EP1'
+    tierName: 'ElasticPremium'
+    serverOS: 'Linux'
     storageAccountName: pyConsumerStorageAccountName
     dockerImageAndTag: ''
     functionsWorkerRuntime: 'python'
@@ -574,6 +530,8 @@ var functionAppDetails = [
   {
     name: cosmosListenerFaName
     skuName: 'EP1'
+    tierName: 'ElasticPremium'
+    serverOS: 'Linux'
     storageAccountName: cosmosListenerStorageAccountName
     dockerImageAndTag: ''
     functionsWorkerRuntime: 'java'
@@ -614,8 +572,9 @@ module functionApps 'Modules/functionApps.bicep' = [for functionAppDetail in fun
     networkRgName: networkResourceGroupName
     peSubnetName: peSubnetName
     resourcePrefix: resourcePrefix
+    serverOS: functionAppDetail.serverOS
     skuName: functionAppDetail.skuName
-    skuTier: functionAppSkuTier
+    skuTier: functionAppDetail.tierName
     storageAccountName: functionAppDetail.storageAccountName
     storageIpRules: [
       {
@@ -638,6 +597,92 @@ module functionApps 'Modules/functionApps.bicep' = [for functionAppDetail in fun
     keyVault
   ]
 }]
+
+var flexFunctionAppDetails = {
+  name: ehConsumerFaName
+  skuName: 'FC1'
+  tierName: 'FlexConsumption'
+  serverOS: 'flex'
+  storageAccountName: ehConsumerStorageAccountName
+  functionsWorkerRuntime: 'DOTNET-ISOLATED'
+  functionSpecificAppSettings: [
+    {
+      name: 'ExternalApiUri'
+      value: ''
+    }
+    {
+      name: 'ADDITIONAL_SIMULATED_PROC_TIME_MS'
+      value: 0
+    }
+    {
+      name: 'EhNameSpace__clientId'
+      value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=ehnsReceiverMiClientId)'
+    }
+    {
+      name: 'EhNameSpace__fullyQualifiedNamespace'
+      value: '${ehnsName}.servicebus.windows.net'
+    }
+    {
+      name: 'EhName'
+      value: entityCollectionName
+    }
+    {
+      name: 'ServiceBusHostName'
+      value: '${serviceBusName}.servicebus.windows.net'
+    }
+    {
+      name: 'SBNS_SENDER_MI_RESOURCE_ID'
+      value: sbnsSenderMiId
+    }
+    {
+      name: 'QueueName'
+      value: entityCollectionName
+    }
+  ]
+  userAssignedIdentities: {
+    '${acrPullMiId}': {}
+    '${kvSecretsUserMiId}': {}
+    '${ehnsReceiverMiId}': {}
+    '${sbnsSenderMiId}': {}
+  }
+}
+
+module flexFunctionApps 'Modules/flexFunctionApps.bicep' = {
+  scope: resourceGroup(workloadRg.name)
+  name: '${timeStamp}-module-${flexFunctionAppDetails.name}'
+  params: {
+    appInsightsName: appInsightsName
+    functionSpecificAppSettings: flexFunctionAppDetails.functionSpecificAppSettings
+    functionsWorkerRuntime: flexFunctionAppDetails.functionsWorkerRuntime
+    kvMiPrincipalId: keyVault.outputs.kvMiId
+    location: location
+    maximumElasticWorkerCount: maximumElasticWorkerCount
+    name: flexFunctionAppDetails.name
+    resourcePrefix: resourcePrefix
+    serverOS: flexFunctionAppDetails.serverOS
+    skuName: flexFunctionAppDetails.skuName
+    skuTier: flexFunctionAppDetails.tierName
+    storageAccountName: flexFunctionAppDetails.storageAccountName
+    storageIpRules: [
+      {
+        value: allowedIpForStorage
+        action: 'Allow'
+      }
+    ]
+    storageSku: storageSku
+    subnetId: '/subscriptions/${subscription().subscriptionId}/resourceGroups/${networkResourceGroupName}/providers/Microsoft.Network/virtualNetworks/${vnetName}/subnets/${flexFunctionAppDetails.name}'
+    tags: tags
+    timeStamp: timeStamp
+    userAssignedIdentities: flexFunctionAppDetails.userAssignedIdentities
+    workloadResourceGroupName: workloadResourceGroupName
+    zoneRedundant: zoneRedundant
+  }
+  dependsOn: [
+    monitoring
+    containerRegistry
+    keyVault
+  ]
+}
 
 /**************************************************************/
 /*                        UTILITY VM                          */

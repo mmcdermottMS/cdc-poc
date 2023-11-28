@@ -18,7 +18,7 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2022-10-01-preview' = {
     capacity: capacity
   }
   properties: {
-    zoneRedundant: zoneRedundant
+    //zoneRedundant: zoneRedundant
     publicNetworkAccess: publicNetworkAccess
     disableLocalAuth: false
   }

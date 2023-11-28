@@ -16,11 +16,13 @@ namespace CDC.GenericMicroserviceAPI.Controllers
         }
 
         [HttpGet(Name = "GetKim")]
-        public async Task<string> Get()
+        public async Task<string> Get([FromQuery(Name = "delayMs")] int delayMs)
         {
             var region = _configuration["Region"] ?? "Unknown";
 
-            return $"KIM Service running in {region}";
+            Thread.Sleep(delayMs);
+
+            return $"Delayed {delayMs}ms. KIM Service running in {region}";
         }
     }
 }

@@ -11,7 +11,7 @@ resource eventHubNameSpace 'Microsoft.EventHub/namespaces@2022-10-01-preview' = 
   name: name
   location: location
   properties: {
-    zoneRedundant: zoneRedundant
+    //zoneRedundant: zoneRedundant
     publicNetworkAccess: publicNetworkAccess
     disableLocalAuth: true
   }

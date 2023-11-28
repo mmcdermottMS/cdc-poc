@@ -6,18 +6,19 @@ param skuTier string
 @allowed([
   'Windows'
   'Linux'
+  'flex'
 ])
 param serverOS string
 param tags object
 param zoneRedundant bool
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
+resource appServicePlan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: name
-  kind: serverOS == 'Windows' ? '' : 'linux'
+  kind: serverOS == 'Windows' ? '' : serverOS == 'flex' ? 'functionapp' : 'linux'
   location: location
   properties: {
     zoneRedundant: zoneRedundant
-    reserved: serverOS == 'Linux'
+    reserved: serverOS == 'Linux' || serverOS == 'flex'
     maximumElasticWorkerCount: maximumElasticWorkerCount
   }
   sku: {
