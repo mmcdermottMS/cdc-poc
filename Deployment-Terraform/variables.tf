@@ -67,6 +67,12 @@ variable "kv_mi_name" {
   default     = ""
 }
 
+variable "kv_sku" {
+  type        = string
+  description = "SKU of the Key Vault."
+  default     = "standard"
+}
+
 variable "law_name" {
   type        = string
   description = "The name of the Log Analytics Workspace. If not specified, a name will be generated using the name_prefix and region_code variables."
@@ -77,6 +83,30 @@ variable "network_rg_name" {
   type        = string
   description = "The name of the Resource Group containing the network resources. If not specified, a name will be generated using the name_prefix and region_code variables."
   default     = ""
+}
+
+variable "sb_name" {
+  type        = string
+  description = "Name of the Service Bus Namespace"
+  default     = ""
+}
+
+variable "sb_owner_mi_name" {
+  type        = string
+  description = "Name of the user-assigned Managed Identity that will be granted the Service Bus Owner role"
+  default     = ""
+}
+
+variable "sb_sender_mi_name" {
+  type        = string
+  description = "Name of the user-assigned Managed Identity that will be granted the Service Bus Sender role"
+  default     = ""
+}
+
+variable "sb_sku" {
+  type        = string
+  description = "SKU of the Service Bus Namespace."
+  default     = "Standard"
 }
 
 variable "vnet_name" {
