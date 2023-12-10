@@ -1,5 +1,3 @@
-using Microsoft.ApplicationInsights.Extensibility;
-
 namespace CDC.GenericMicroserviceAPI
 {
     public class Program
@@ -8,11 +6,7 @@ namespace CDC.GenericMicroserviceAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
-            builder.Services.AddApplicationInsightsTelemetry();
             builder.Services.AddControllers();
-            builder.Services.AddSingleton<ITelemetryInitializer, CloudRoleNameTelemetryInitializer>();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -27,12 +21,8 @@ namespace CDC.GenericMicroserviceAPI
             }
 
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
-
             app.MapControllers();
-
             app.Run();
         }
     }

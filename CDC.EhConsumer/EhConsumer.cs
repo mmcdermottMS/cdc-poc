@@ -1,10 +1,7 @@
-using Azure.Core;
-using Azure.Identity;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Consumer;
 using Azure.Messaging.ServiceBus;
 using CDC.Domain;
-using Microsoft.ApplicationInsights;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -24,20 +21,22 @@ namespace CDC.EhConsumer
         private readonly ServiceBusSender _serviceBusSender;
         private readonly HttpClient _httpClient;
         private readonly Random _random;
-        private readonly TelemetryClient _telemetryClient;
 
-        public EhConsumer(TelemetryClient telemetryClient, ServiceBusClient serviceBusClient)
+        public EhConsumer(ServiceBusClient serviceBusClient)
         {
             _serviceBusClient = serviceBusClient;
             _serviceBusSender = _serviceBusClient.CreateSender(Environment.GetEnvironmentVariable("QueueName"));
             _httpClient = new HttpClient();
             _random = new Random();
-            _telemetryClient = telemetryClient;
         }
 
         [FunctionName("EhConsumer")]
         public async Task Run([EventHubTrigger("%EhName%", Connection = "EhNameSpace")] EventData[] events, ILogger log, PartitionContext partitionContext)
         {
+
+            //OpenTelemetry: https://devblogs.microsoft.com/dotnet/azure-monitor-opentelemetry-distro/
+
+
             log.LogInformation($"Received {events.Length} events for partition ID {partitionContext.PartitionId}");
 
             var exceptions = new List<Exception>();
@@ -49,9 +48,6 @@ namespace CDC.EhConsumer
                 var messageBatch = await _serviceBusSender.CreateMessageBatchAsync();
                 foreach (EventData eventData in events)
                 {
-                    var _eventStreamBacklogTracing = new EventStreamBacklogTracing(_telemetryClient);
-                    _eventStreamBacklogTracing.LogSequenceDifference(eventData, partitionContext);
-
                     if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ExternalApiUri")))
                     {
                         /*For use if the included Generic Microserviecs API project is deployed
