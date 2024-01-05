@@ -38,6 +38,16 @@ variable "sku" {
   description = "SKU of the Service Bus Namespace"
 }
 
+variable "subnets_allowed" {
+  type = list(string)
+  description = "List of Subnet IDs allowed to route to the resource"
+}
+
+variable "subnet_id" {
+  type        = string
+  description = "ID of the subnet that will contain the Private Endpoint."
+}
+
 variable "tags" {
   type    = map(any)
   default = {}

@@ -49,7 +49,7 @@ resource "azurerm_subnet" "function_app_subnets" {
       name = "Microsoft.Web/serverFarms"
     }
   }
-  service_endpoints = ["Microsoft.Storage", "Microsoft.KeyVault"]
+  service_endpoints = ["Microsoft.Storage", "Microsoft.KeyVault", "Microsoft.ServiceBus"]
   count             = length(var.function_app_names)
 }
 

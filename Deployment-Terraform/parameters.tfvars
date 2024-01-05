@@ -12,6 +12,8 @@ name_prefix = "msft-cdc"
 
 region_code = "eus"
 
+sb_sku = "Premium"
+
 tags = {
   project   = "CDC Proof of Concept"
   deployenv = "dev"
@@ -36,5 +38,6 @@ tags = {
 #sb_name           = ""
 #sb_owner_mi_name  = ""
 #sb_sender_mi_name = ""
+#sb_sku            = ""
 #vnet_name         = ""
 #workload_rg_name  = ""
